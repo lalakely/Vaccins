@@ -27,6 +27,7 @@ export default function AddChild() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log('Données envoyées vers le backend :', formData); // Affiche les données dans la console
         try {
             const response = await fetch('http://localhost:3000/api/enfants', {
                 method: 'POST',
@@ -38,7 +39,7 @@ export default function AddChild() {
     
             if (response.ok) {
                 const data = await response.text();
-                console.log('Enfant ajouté:', data);  // Vous pouvez aussi afficher l'ID retourné
+                console.log('Enfant ajouté:', data);
                 setFormData({
                     Nom: '',
                     Prenom: '',
@@ -61,6 +62,7 @@ export default function AddChild() {
             console.error('Erreur réseau :', error);
         }
     };
+    
     
 
     return (
