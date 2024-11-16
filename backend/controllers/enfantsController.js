@@ -4,23 +4,45 @@ const db = require('../config/db');
 
 // Add a new child 
 exports.createEnfant = (req, res) => {
-    const { Nom, Prenom, CODE, date_naissance, age_premier_contact, SEXE, NomMere, NomPere, Domicile, Fokotany, Hameau, Telephone } = req.body;
+    const sql = `
+        INSERT INTO Enfants (
+            Nom, Prenom, CODE, date_naissance, age_premier_contact,
+            SEXE, NomMere, NomPere, Domicile, Fokotany, Hameau, Telephone
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ? , ? )
+    `;
+    
+    const values = [
+        req.body.Nom,
+        req.body.Prenom,
+        req.body.CODE,
+        req.body.date_naissance,
+        req.body.age_premier_contact,
+        req.body.SEXE,
+        req.body.NomMere,
+        req.body.NomPere,
+        req.body.Domicile,
+        req.body.Fokotany,
+        req.body.Hameau,
+        req.body.Telephone
+    ];
 
-    // Vérifier que toutes les données nécessaires sont présentes
-    if (!Nom || !Prenom || !CODE || !SEXE || !NomMere || !NomPere || !Domicile || !Telephone) {
-        return res.status(400).send("Certaines informations sont manquantes");
-    }
 
-    const query = 'INSERT INTO Enfants (Nom, Prenom, CODE, date_naissance, age_premier_contact, SEXE, NomMere, NomPere, Domicile, Fokotany, Hameau, Telephone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    console.log('SQL:', sql);
+    console.log('Values:', values);
+    console.log('Values length:', values.length);
 
-    db.query(query, [Nom, Prenom, CODE, date_naissance, age_premier_contact, SEXE, NomMere, NomPere, Domicile, Fokotany, Hameau, Telephone], (err, result) => {
+    db.query(sql, values, (err, result) => {
         if (err) {
-            console.error("Erreur de base de données: ", err);
-            return res.status(500).send("Erreur serveur lors de l'ajout de l'enfant");
+            console.error('Error details:', err);
+            return res.status(500).json(err);
         }
-        res.status(201).send(`Enfant ajouté avec succès, ID: ${result.insertId}`);
+        res.status(201).json({
+            message: "Enfant ajouté avec succès",
+            id: result.insertId
+        });
     });
 };
+
 
 
 exports.getAllEnfants = (req, res) => {
