@@ -29,13 +29,12 @@ function ChildList() {
     };
 
     return (
-        <div className="p-8">
+        <div className="item-center p-10">
             <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Liste des Enfants</h1>
-            <div className="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
-                <table className="min-w-full bg-white">
+            <div className="overflow-x-auto shadow-lg rounded-lg border border-gray-200 max-w-[800px] mx-auto">
+                <table  className="min-w-full bg-white ">
                     <thead>
-                        <tr className="bg-gray-800 text-white">
-                            <th className="py-3 px-6 text-left">ID</th>
+                        <tr className="bg-gray-200 text-black border-b border-gray-300">
                             <th className="py-3 px-6 text-left">Nom</th>
                             <th className="py-3 px-6 text-left">Prénom</th>
                             <th className="py-3 px-6 text-left">Date de Naissance</th>
