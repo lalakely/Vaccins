@@ -3,8 +3,11 @@ import AddChild from "../components/Child/AddChild";
 
 function Child(){
     return <>
-        <AddChild />
-       <ChildList />
+        <div className="flex flex-col item-center">
+            <AddChild />
+            <ChildList/>
+        </div>
+        
     </>
 }
 
