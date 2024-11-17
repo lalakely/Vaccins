@@ -55,6 +55,7 @@ export default function AddChild() {
                     Telephone: ''
                 });
                 handleCloseModal();
+                window.location.reload();
             } else {
                 console.error('Erreur lors de l’ajout de l’enfant');
             }
@@ -67,12 +68,15 @@ export default function AddChild() {
 
     return (
         <>
-            <button
-                onClick={handleOpenModal}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-                Ajouter un enfant
-            </button>
+            <div>
+                <button
+                    onClick={handleOpenModal}
+                    className=" w-[200px] bg-blue-500 text-white rounded hover:bg-blue-600" 
+                >
+                    Ajouter un enfant
+                </button>
+            </div>
+            
 
             {isModalOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
