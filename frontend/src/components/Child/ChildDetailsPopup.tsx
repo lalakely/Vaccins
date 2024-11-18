@@ -19,19 +19,19 @@ function ChildDetailsPopup({ enfant, onClose }) {
                 
                 {/* Informations détaillées */}
                 <div className="space-y-4">
-                    <p className="text-gray-700"><span className="font-semibold">ID:</span> {enfant.id}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Nom:</span> {enfant.Nom}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Prénom:</span> {enfant.Prenom}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Code:</span> {enfant.CODE}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Date de naissance:</span> {new Date(enfant.date_naissance).toLocaleDateString()}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Âge au premier contact:</span> {enfant.age_premier_contact}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Sexe:</span> {enfant.SEXE}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Nom de la mère:</span> {enfant.NomMere}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Nom du père:</span> {enfant.NomPere}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Domicile:</span> {enfant.Domicile}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Fokotany:</span> {enfant.Fokotany}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Hameau:</span> {enfant.Hameau}</p>
-                    <p className="text-gray-700"><span className="font-semibold">Téléphone:</span> {enfant.Telephone}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">ID:</span> {enfant.id}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Nom:</span> {enfant.Nom}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Prénom:</span> {enfant.Prenom}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Code:</span> {enfant.CODE}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Date de naissance:</span> {new Date(enfant.date_naissance).toLocaleDateString()}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Âge au premier contact:</span> {enfant.age_premier_contact}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Sexe:</span> {enfant.SEXE}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Nom de la mère:</span> {enfant.NomMere}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Nom du père:</span> {enfant.NomPere}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Domicile:</span> {enfant.Domicile}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Fokotany:</span> {enfant.Fokotany}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Hameau:</span> {enfant.Hameau}</p>
+                    <p className="text-gray-700 text-left"><span className="font-semibold">Téléphone:</span> {enfant.Telephone}</p>
                 </div>
 
                
