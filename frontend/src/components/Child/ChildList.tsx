@@ -30,8 +30,7 @@ function ChildList() {
 
     return (
         <div className="item-center p-10">
-            <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Liste des Enfants</h1>
-            <div className="overflow-x-auto shadow-lg rounded-lg border border-gray-200 max-w-[800px] mx-auto">
+            <div className="overflow-x-auto shadow-lg rounded-lg border border-gray-200 max-w-[800px] mx-auto m-10">
                 <table  className="min-w-full bg-white ">
                     <thead>
                         <tr className="bg-gray-200 text-black border-b border-gray-300">

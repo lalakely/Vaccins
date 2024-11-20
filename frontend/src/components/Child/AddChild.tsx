@@ -68,18 +68,18 @@ export default function AddChild() {
 
     return (
         <>
-            <div>
+            <div className="fixed top-0 w-full rounded-lg h-25 flex flex-row justify-around items-center p-4">
+            <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Liste des Enfants</h1>
                 <button
                     onClick={handleOpenModal}
                     className=" w-[200px] bg-blue-500 text-white rounded hover:bg-blue-600" 
                 >
                     Ajouter un enfant
-                </button>
-            </div>
-            
+                </button>   
+            </div>  
 
             {isModalOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ">
                     <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl">
                         <h2 className="text-xl font-semibold mb-4 text-gray-700">Ajouter un enfant</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
