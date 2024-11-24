@@ -1,5 +1,3 @@
-
-
 const db = require('../config/db');
 
 // Add a new child 
@@ -25,7 +23,6 @@ exports.createEnfant = (req, res) => {
         req.body.Hameau,
         req.body.Telephone
     ];
-
 
     console.log('SQL:', sql);
     console.log('Values:', values);
