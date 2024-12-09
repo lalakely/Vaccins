@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CiCirclePlus } from "react-icons/ci";
 
 export default function AddChild() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,13 +70,14 @@ export default function AddChild() {
     return (
         <>
             <div className="fixed top-0 w-full rounded-lg h-25 flex flex-row justify-around items-center p-4">
-            <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Liste des Enfants</h1>
+            <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Liste des personnes</h1>
                 <button
                     onClick={handleOpenModal}
-                    className=" w-[200px] bg-blue-500 text-white rounded hover:bg-blue-600" 
+                    className="w-[200px] bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-around "
                 >
-                    Ajouter un enfant
-                </button>   
+                    Ajouter une personne
+                    <CiCirclePlus className="text-2xl" />
+                </button>
             </div>  
 
             {isModalOpen && (

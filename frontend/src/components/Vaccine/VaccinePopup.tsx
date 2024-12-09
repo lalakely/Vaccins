@@ -19,9 +19,12 @@ function VaccinePopup ({vaccine , onClose}){
                 <p className="text-gray-600 text-left">
                     <span className="font-semibold">Arrivée :</span>  {new Date(vaccine.Date_arrivee).toLocaleDateString()}
                 </p>
-            <p className="text-gray-600 text-left">
-                <span className="font-semibold">Péremption : </span>{new Date(vaccine.Date_peremption).toLocaleDateString()}
-            </p>
+                <p className="text-gray-600 text-left">
+                    <span className="font-semibold">Péremption : </span>{new Date(vaccine.Date_peremption).toLocaleDateString()}
+                </p>
+                <p className="text-gray-600 text-left">
+                    <span className="font-semibold">Description: </span>{vaccine.Description}
+                </p>
             </div>
         </div>
     );
