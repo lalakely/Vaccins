@@ -15,8 +15,8 @@ function NavBar() {
                     className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
                 >
                     <div className="flex justify-between items-center text-white">
-                        <span>Personnes </span>
                         <FaRegUser />
+                        <span>Personnes </span>
                     </div>
                 </Link>
                 <Link 
@@ -24,8 +24,8 @@ function NavBar() {
                     className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
                 >
                     <div className="flex justify-between items-center text-white">
-                        <span>Vaccins</span>
                         <TbVaccine />
+                        <span>Vaccins</span>
                     </div>
                 </Link>
                 <Link 
@@ -33,8 +33,8 @@ function NavBar() {
                     className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
                 >
                     <div className="flex justify-between items-center text-white">
-                        <span>Fokotany</span>
                         <LuMapPin />
+                        <span>Fokotany</span>
                     </div>
                 </Link>
                 <Link 
@@ -42,8 +42,8 @@ function NavBar() {
                     className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
                 >
                     <div className="flex justify-between items-center text-white">
-                        <span>Hameau</span>
                         <FaRegMap />
+                        <span>Hameau</span>
                     </div>
                 </Link>
             </div>
