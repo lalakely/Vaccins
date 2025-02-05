@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { CiCirclePlus } from "react-icons/ci";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function AddChild() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         Nom: '',
         Prenom: '',
@@ -18,9 +22,6 @@ export default function AddChild() {
         Telephone: ''
     });
 
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -28,19 +29,24 @@ export default function AddChild() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Données envoyées vers le backend :', formData); // Affiche les données dans la console
+    
+        // Vérifier si age_premier_contact est vide et le remplacer par 0
+        const formDataToSend = {
+            ...formData,
+            age_premier_contact: formData.age_premier_contact.trim() === "" ? 0 : parseInt(formData.age_premier_contact, 10),
+        };
+    
+        console.log('Données envoyées vers le backend :', formDataToSend);
+    
         try {
             const response = await fetch('http://localhost:3000/api/enfants', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formDataToSend),
             });
     
             if (response.ok) {
-                const data = await response.text();
-                console.log('Enfant ajouté:', data);
+                console.log('Enfant ajouté avec succès');
                 setFormData({
                     Nom: '',
                     Prenom: '',
@@ -55,7 +61,6 @@ export default function AddChild() {
                     Hameau: '',
                     Telephone: ''
                 });
-                handleCloseModal();
                 window.location.reload();
             } else {
                 console.error('Erreur lors de l’ajout de l’enfant');
@@ -65,174 +70,79 @@ export default function AddChild() {
         }
     };
     
-    
 
     return (
-        <>
-            <div className="fixed top-0 w-full rounded-lg h-25 flex flex-row justify-around items-center p-4">
+        <div className="w-full flex flex-col items-center p-4">
             <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Liste des personnes</h1>
-                <button
-                    onClick={handleOpenModal}
-                    className="w-[200px] bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-around "
-                >
-                    Ajouter une personne
-                    <CiCirclePlus className="text-2xl" />
-                </button>
-            </div>  
 
-            {isModalOpen && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 ">
-                    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl">
-                        <h2 className="text-xl font-semibold mb-4 text-gray-700">Ajouter un enfant</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="flex gap-6">
-                                {/* Partie gauche */}
-                                <div className="flex-1 space-y-4 ">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Nom:</label>
-                                        <input
-                                            type="text"
-                                            name="Nom"
-                                            value={formData.Nom}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Prénom:</label>
-                                        <input
-                                            type="text"
-                                            name="Prenom"
-                                            value={formData.Prenom}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">CODE:</label>
-                                        <input
-                                            type="number"
-                                            name="CODE"
-                                            value={formData.CODE}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Date de naissance:</label>
-                                        <input
-                                            type="date"
-                                            name="date_naissance"
-                                            value={formData.date_naissance}
-                                            onChange={handleChange}
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Sexe:</label>
-                                        <select
-                                            name="SEXE"
-                                            value={formData.SEXE}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        >
-                                            <option value="">Sélectionnez</option>
-                                            <option value="M">Masculin</option>
-                                            <option value="F">Féminin</option>
-                                        </select>
-                                    </div>
-                                </div>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                        Ajouter une personne <CiCirclePlus className="text-xl" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>Ajouter un enfant</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Partie Gauche */}
+                        <div className="space-y-3">
+                            <Label>Nom</Label>
+                            <Input type="text" name="Nom" value={formData.Nom} onChange={handleChange} required />
 
-                                {/* Partie droite */}
-                                <div className="flex-1 space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Nom de la mère:</label>
-                                        <input
-                                            type="text"
-                                            name="NomMere"
-                                            value={formData.NomMere}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Nom du père:</label>
-                                        <input
-                                            type="text"
-                                            name="NomPere"
-                                            value={formData.NomPere}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Domicile:</label>
-                                        <input
-                                            type="text"
-                                            name="Domicile"
-                                            value={formData.Domicile}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Fokotany:</label>
-                                        <input
-                                            type="text"
-                                            name="Fokotany"
-                                            value={formData.Fokotany}
-                                            onChange={handleChange}
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Hameau:</label>
-                                        <input
-                                            type="text"
-                                            name="Hameau"
-                                            value={formData.Hameau}
-                                            onChange={handleChange}
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Téléphone:</label>
-                                        <input
-                                            type="text"
-                                            name="Telephone"
-                                            value={formData.Telephone}
-                                            onChange={handleChange}
-                                            className="w-full border border-gray-300 rounded px-3 py-2"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    type="submit"
-                                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                                >
-                                    Enregistrer
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleCloseModal}
-                                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                >
-                                    Annuler
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-        </>
+                            <Label>Prénom</Label>
+                            <Input type="text" name="Prenom" value={formData.Prenom} onChange={handleChange} required />
+
+                            <Label>CODE</Label>
+                            <Input type="number" name="CODE" value={formData.CODE} onChange={handleChange} required />
+
+                            <Label>Date de naissance</Label>
+                            <Input type="date" name="date_naissance" value={formData.date_naissance} onChange={handleChange} required />
+
+                            <Label>Sexe</Label>
+                            <Select onValueChange={(value) => setFormData({ ...formData, SEXE: value })} required>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionnez le sexe" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="M">Masculin</SelectItem>
+                                    <SelectItem value="F">Féminin</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Partie Droite */}
+                        <div className="space-y-3">
+                            <Label>Nom de la mère</Label>
+                            <Input type="text" name="NomMere" value={formData.NomMere} onChange={handleChange} required />
+
+                            <Label>Nom du père</Label>
+                            <Input type="text" name="NomPere" value={formData.NomPere} onChange={handleChange} required />
+
+                            <Label>Domicile</Label>
+                            <Input type="text" name="Domicile" value={formData.Domicile} onChange={handleChange} required />
+
+                            <Label>Fokotany</Label>
+                            <Input type="text" name="Fokotany" value={formData.Fokotany} onChange={handleChange} />
+
+                            <Label>Hameau</Label>
+                            <Input type="text" name="Hameau" value={formData.Hameau} onChange={handleChange} />
+
+                            <Label>Téléphone</Label>
+                            <Input type="text" name="Telephone" value={formData.Telephone} onChange={handleChange} />
+                        </div>
+
+                        {/* Boutons */}
+                        <div className="col-span-2 flex justify-end space-x-3">
+                            <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                                Enregistrer
+                            </Button>
+                         
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 }

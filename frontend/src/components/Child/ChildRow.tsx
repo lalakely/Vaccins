@@ -1,22 +1,20 @@
-function ChildRow({ enfant, isEven, onDetailsClick }) {
+import { TableRow, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+
+export default function ChildRow({ enfant, isEven, onDetailsClick }) {
     return (
-        <tr className={`${isEven ? "bg-gray-50" : "bg-white"} hover:bg-gray-100`}>
-            <td className="py-4 px-6 border-b border-gray-200 text-black font-medium text-left">{enfant.Nom}</td>
-            <td className="py-4 px-6 border-b border-gray-200 text-gray-700 text-left">{enfant.Prenom}</td>
-            <td className="py-4 px-6 border-b border-gray-200 text-gray-700 text-left">
+        <TableRow className={isEven ? "bg-gray-50" : "bg-white"}>
+            <TableCell className="py-4 px-6 font-medium text-black">{enfant.Nom}</TableCell>
+            <TableCell className="py-4 px-6 text-gray-700">{enfant.Prenom}</TableCell>
+            <TableCell className="py-4 px-6 text-gray-700">
                 {new Date(enfant.date_naissance).toLocaleDateString()}
-            </td>
-            <td className="py-4 px-6 border-b border-gray-200 text-gray-700 text-left">{enfant.Domicile}</td>
-            <td className="py-4 px-6 border-b border-gray-200 text-gray-700">
-                <button
-                    onClick={() => onDetailsClick(enfant)}
-                    className="text-blue-500 "
-                >
+            </TableCell>
+            <TableCell className="py-4 px-6 text-gray-700">{enfant.Domicile}</TableCell>
+            <TableCell className="py-4 px-6">
+                <Button variant="link" onClick={() => onDetailsClick(enfant)}>
                     Détails
-                </button>
-            </td>
-        </tr>
+                </Button>
+            </TableCell>
+        </TableRow>
     );
 }
-
-export default ChildRow;

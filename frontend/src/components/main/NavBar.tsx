@@ -1,92 +1,118 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { TbVaccine } from "react-icons/tb";
-import { FaRegUser } from "react-icons/fa";
+import { FaRegUser, FaBars, FaTimes } from "react-icons/fa";
 import { LuMapPin } from "react-icons/lu";
 import { FaRegMap } from "react-icons/fa";
+import { useAuth } from "../../contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function NavBar() {
+    const { logout, user } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
+    const [username, setUsername] = useState("");
+
+    useEffect(() => {
+        setTimeout(() => setIsLoading(false), 1000); // Effet de chargement
+
+        // Récupération du nom d'utilisateur depuis localStorage
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if (storedUser) {
+            setUsername(storedUser.username);
+        }
+    }, []);
+
+    const handleLogout = () => {
+        logout();
+        navigate("/");
+    };
+
     return (
         <>
-            {/* Menu vertical pour grands écrans */}
-            <div className="hidden lg:flex fixed top-0 left-0 h-full bg-blue-600 w-48 flex-col items-start text-white">
-                <h2 className="text-xl font-bold mb-6 p-4">Menu</h2>
-                <Link 
-                    to="/" 
-                    className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
-                >
-                    <div className="flex justify-between items-center text-white">
-                        <FaRegUser />
-                        <span>Personnes </span>
-                    </div>
-                </Link>
-                <Link 
-                    to="/Vaccins" 
-                    className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
-                >
-                    <div className="flex justify-between items-center text-white">
-                        <TbVaccine />
-                        <span>Vaccins</span>
-                    </div>
-                </Link>
-                <Link 
-                    to="/Fokotany" 
-                    className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
-                >
-                    <div className="flex justify-between items-center text-white">
-                        <LuMapPin />
-                        <span>Fokotany</span>
-                    </div>
-                </Link>
-                <Link 
-                    to="/Hameau" 
-                    className="py-2 px-4 w-full text-left hover:bg-blue-700 rounded"
-                >
-                    <div className="flex justify-between items-center text-white">
-                        <FaRegMap />
-                        <span>Hameau</span>
-                    </div>
-                </Link>
-            </div>
+            {/* Bouton d’ouverture/fermeture */}
+            <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className={`hidden lg:block fixed top-4 z-50 bg-white border border-gray-300 text-gray-700 p-1.5 rounded-full shadow-sm hover:bg-gray-200 transition-all ${
+                    isSidebarOpen ? "left-[270px]" : "left-4"
+                }`}
+            >
+                {isSidebarOpen ? <FaTimes size={20} className="opacity-80" /> : <FaBars size={20} className="opacity-80" />}
+            </button>
 
-            {/* Menu en bas pour petits écrans */}
-            <div className="lg:hidden fixed bottom-0 left-0 w-full bg-blue-600 flex justify-around items-center text-white h-19">
-                <Link 
-                    to="/" 
-                    className="flex flex-col items-center text-sm hover:bg-blue-700 w-full h-full"
+            {/* Barre latérale */}
+            <div
+                className={`hidden lg:flex fixed top-0 left-0 h-full bg-muted w-64 flex-col items-start text-muted-foreground p-4 shadow-lg transition-all ${
+                    isSidebarOpen ? "translate-x-0" : "-translate-x-64"
+                }`}
+            >
+                {/* Nom de l'utilisateur */}
+                <div className="text-lg font-semibold mb-6 text-primary flex items-center gap-2 p-3 bg-gray-100 rounded-lg w-full">
+                    {isLoading ? (
+                        <Skeleton className="h-6 w-32 bg-gray-300" />
+                    ) : (
+                        <span>{username || "Utilisateur"}</span>
+                    )}
+                </div>
+
+                <Link
+                    to="/Personnes"
+                    className={`flex items-center w-full py-3 px-4 rounded-lg transition-colors ${
+                        location.pathname === "/Personnes"
+                            ? "bg-primary text-white"
+                            : "hover:bg-gray-200"
+                    }`}
                 >
-                    <div className="flex flex-col items-center text-white py-2">
-                        <FaRegUser size={20} />
-                        <span>Personnes</span>
-                    </div>
-                   
+                    <FaRegUser className="mr-3" />
+                    <span>Personnes</span>
                 </Link>
-                <Link 
-                    to="/Vaccins" 
-                    className="flex flex-col items-center text-sm hover:bg-blue-700 w-full h-full"
+
+                <Link
+                    to="/Vaccins"
+                    className={`flex items-center w-full py-3 px-4 rounded-lg transition-colors ${
+                        location.pathname === "/Vaccins"
+                            ? "bg-primary text-white"
+                            : "hover:bg-gray-200"
+                    }`}
                 >
-                    <div className="flex flex-col items-center text-white py-2">
-                        <TbVaccine size={20} />
-                        <span>Vaccins</span>
-                    </div>
+                    <TbVaccine className="mr-3" />
+                    <span>Vaccins</span>
                 </Link>
-                <Link 
-                    to="/Fokotany" 
-                    className="flex flex-col items-center text-sm hover:bg-blue-700 w-full h-full"
+
+                <Link
+                    to="/Fokotany"
+                    className={`flex items-center w-full py-3 px-4 rounded-lg transition-colors ${
+                        location.pathname === "/Fokotany"
+                            ? "bg-primary text-white"
+                            : "hover:bg-gray-200"
+                    }`}
                 >
-                    <div className="flex flex-col items-center text-white py-2">
-                        <LuMapPin size={20} />
-                        <span>Fokotany</span>
-                    </div>
+                    <LuMapPin className="mr-3" />
+                    <span>Fokotany</span>
                 </Link>
-                <Link 
-                    to="/Hameau" 
-                    className="flex flex-col items-center text-sm hover:bg-blue-700 w-full h-full"
+
+                <Link
+                    to="/Hameau"
+                    className={`flex items-center w-full py-3 px-4 rounded-lg transition-colors ${
+                        location.pathname === "/Hameau"
+                            ? "bg-primary text-white"
+                            : "hover:bg-gray-200"
+                    }`}
                 >
-                    <div className="flex flex-col items-center text-white py-2">
-                        <FaRegMap size={20} />
-                        <span>Hameau</span>
-                    </div>
+                    <FaRegMap className="mr-3" />
+                    <span>Hameau</span>
                 </Link>
+
+                <Button
+                    onClick={handleLogout}
+                    variant="ghost"
+                    className="mt-auto w-full py-3 px-4 flex items-center justify-start text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                    Déconnexion
+                </Button>
             </div>
         </>
     );
