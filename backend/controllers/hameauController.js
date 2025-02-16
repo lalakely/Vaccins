@@ -1,80 +1,96 @@
-const db = require('../config/db');
+const db = require('../config/db'); // Pool MySQL compatible avec les promesses
 
-exports.createHameau = (req , res) => {
+// Create a new Hameau
+exports.createHameau = async (req, res) => {
     const sql = `
         INSERT INTO Hameau (
-            Nom , px , py
-        ) VALUES (? , ? , ?)
+            Nom, px, py
+        ) VALUES (?, ?, ?)
     `;
 
     const values = [
         req.body.Nom,
         req.body.px,
-        req.body.py
+        req.body.py,
     ];
 
-    console.log('SQL :', sql);
-    console.log('Values :', values);
-    console.log('Values length :' , values.length);
+    try {
+        console.log('SQL:', sql);
+        console.log('Values:', values);
 
-    db.query(sql , values, (err , result) => {
-        if(err) {
-            console.error('Error details :' , err);
-            return res.status(500).json(err);
-        }
+        const [result] = await db.query(sql, values);
         res.status(201).json({
-            message: "Enfant ajouté avec succès",
-            id: result.insertId
+            message: "Hameau ajouté avec succès",
+            id: result.insertId,
         });
-    });
-}
+    } catch (err) {
+        console.error('Error details:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur', error: err });
+    }
+};
 
-exports.getAllEnfants = (req, res) => {
-    db.query("SELECT * FROM Hameau" , (err , results) => {
-        if(err){
-            return res.status(500).send(err);
-        }
+// Get all Hameau
+exports.getAllHameau = async (req, res) => {
+    try {
+        const [results] = await db.query("SELECT * FROM Hameau");
         res.json(results);
-    });
-}
-
-exports.getHameauById = (req , res) => {
-    const enfantId = req.params.id;
-    db.query("SELECT * FROM Hameau WHERE id = ?" , [enfantId] , (err , result) => {
-        if(err){
-            return res.status(500).send(err);
-        }
-        if(result.length === 0){
-            return res.status(404).send("Hameau non trouvé");
-        }
-    });
+    } catch (err) {
+        console.error('Error fetching Hameau:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
 };
 
-exports.updateHameau = (req , res) => {
+// Get a Hameau by its ID
+exports.getHameauById = async (req, res) => {
     const hameauId = req.params.id;
-    const {Nom , px , py} = req.body;
-    const query = `UPDATE Hameau SET Nom = ? , px = ? , py = ? WHERE id = ?`;
 
-    db.query(query , [Nom , px , py , hameauId] , (err , result) => {
-        if(err){
-            return res.status(500).send(err);
+    try {
+        const [result] = await db.query("SELECT * FROM Hameau WHERE id = ?", [hameauId]);
+        if (result.length === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
         }
-        if(result.affectedRows === 0){
-            return res.status(404).send("Hameau non trouvé");
-        }
-        res.send("Hameau mis à jour avec succès");
-    })
+        res.json(result[0]); // Retourne uniquement le premier hameau trouvé
+    } catch (err) {
+        console.error('Error fetching Hameau by ID:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
 };
 
-exports.deleteHameau = (req , res) => {
+// Update a Hameau
+exports.updateHameau = async (req, res) => {
+    const hameauId = req.params.id;
+    const { Nom, px, py } = req.body;
+
+    const query = `
+        UPDATE Hameau 
+        SET Nom = ?, px = ?, py = ? 
+        WHERE id = ?
+    `;
+
+    try {
+        const [result] = await db.query(query, [Nom, px, py, hameauId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
+        }
+        res.json({ message: "Hameau mis à jour avec succès" });
+    } catch (err) {
+        console.error('Error updating Hameau:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+};
+
+// Delete a Hameau
+exports.deleteHameau = async (req, res) => {
     const hameauId = req.params.id;
 
-    db.query("DELETE FROM Hameau WHERE id = ?" , [hameauId] , (err , result) => {
-        if(err) {
-            return res.status(500).send(err);
-        }if(result.affectesRows === 0){
-            return res.stetus(404).send("Hameau non trouvé");
+    try {
+        const [result] = await db.query("DELETE FROM Hameau WHERE id = ?", [hameauId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
         }
-        res.send("Hameau supprimé avec succès");
-    });
+        res.json({ message: "Hameau supprimé avec succès" });
+    } catch (err) {
+        console.error('Error deleting Hameau:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
 };

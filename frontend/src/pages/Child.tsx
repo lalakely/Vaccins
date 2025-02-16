@@ -5,10 +5,10 @@ import NavBar from "../components/main/NavBar";
 function Child(){
     return <>
         <NavBar />
-        <div className="flex flex-col item-center">
+        
             <AddChild />
             <ChildList/>
-        </div>
+
         
     </>
 }

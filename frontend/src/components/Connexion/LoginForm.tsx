@@ -6,7 +6,7 @@ import { AlertCircle } from "lucide-react"
 
 import { useAuth } from "../../contexts/AuthContext"
 
-// Composants shadcn/ui (assurez-vous que vos chemins d'import sont corrects)
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -56,7 +56,12 @@ function LoginForm() {
         const data = await response.json();
 
         if (response.ok) {
-            login(data.token, data.user); // Ajout des infos utilisateur
+            console.log("🟢 Token reçu :", data.token); // Log pour voir le token reçu
+
+            localStorage.setItem("token", data.token); // Stocker le token
+            localStorage.setItem("user", JSON.stringify(data.user)); // Stocker l'utilisateur
+
+            login(data.token, data.user); // Met à jour le contexte Auth
             navigate("/Vaccins");
         } else {
             setError(data.message || "Une erreur est survenue.");
@@ -66,6 +71,7 @@ function LoginForm() {
         setError("Impossible de se connecter. Veuillez réessayer.");
     }
 };
+
 
 
   return (
