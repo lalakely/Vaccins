@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertCircle, Loader2, Users, UserPlus, Home, Calendar, Info, Filter } from "lucide-react";
-import { Input } from "@/components/ui/input";
+
 import { FaUser, FaUserPlus, FaBarcode, FaCalendarAlt, FaVenusMars, FaHome, FaPhone, FaUserTie, FaUserFriends } from 'react-icons/fa';
+import { Input } from "@/components/ui/input"; // Import ShadCN components
 
 export default function ChildList() {
     const [data, setData] = useState([]);
@@ -26,7 +27,9 @@ export default function ChildList() {
         Domicile: '',
         Fokotany: '',
         Hameau: '',
-        Telephone: ''
+        Telephone: '',
+        age_min: '',
+        age_max: ''
     });
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -60,9 +63,26 @@ export default function ChildList() {
         setFilters({ ...filters, [name]: value });
     };
 
+    const calculateAge = (dateString) => {
+        const today = new Date();
+        const birthDate = new Date(dateString);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDifference = today.getMonth() - birthDate.getMonth();
+        if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
+
     const filteredData = data.filter(enfant => {
         return Object.keys(filters).every(key => {
             if (filters[key] === '') return true;
+            if (key === 'age_min' || key === 'age_max') {
+                const age = calculateAge(enfant.date_naissance);
+                if (key === 'age_min' && age < filters[key]) return false;
+                if (key === 'age_max' && age > filters[key]) return false;
+                return true;
+            }
             return String(enfant[key]).toLowerCase().includes(filters[key].toLowerCase());
         });
     });
@@ -72,6 +92,24 @@ export default function ChildList() {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+    const resetFilters = () => {
+        setFilters({
+            Nom: '',
+            Prenom: '',
+            CODE: '',
+            date_naissance: '',
+            SEXE: '',
+            NomMere: '',
+            NomPere: '',
+            Domicile: '',
+            Fokotany: '',
+            Hameau: '',
+            Telephone: '',
+            age_min: '',
+            age_max: ''
+        });
+    };
 
     return (
         <div className={`p-6 flex flex-col items-center pt-[70px] overflow-y-auto w-full relative transition-all duration-300 ${isFilterOpen ? 'pr-[320px]' : ''}`}>
@@ -160,78 +198,186 @@ export default function ChildList() {
                
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className={`fixed top-1/2 right-4 transform -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-2 rounded-full shadow-md hover:bg-gray-200 transition-all z-50
-                    ${isFilterOpen ? "right-[320px]" : "right-[15px]"}`}
+                    ${isFilterOpen ? "right-[340px]" : "right-[15px]"}`}
             >
                 <Filter className="w-4 h-4" />
             </Button>
 
             {/* ✅ Filter Drawer ajusté */}
-            <div className={`fixed top-0 right-0 h-full w-[300px] p-4 bg-white shadow-lg flex flex-col justify-center transform transition-transform z-40 ${isFilterOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                      <div
+                className={`fixed top-0 right-0 h-full max-w-[320px] w-full p-5 bg-gray-50 shadow-2xl rounded-l-lg flex flex-col justify-start transform transition-transform z-40 
+                ${isFilterOpen ? "translate-x-0" : "translate-x-full"}`}
+            >
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <Filter className="w-6 h-6 text-blue-500" />
+                    Filtres
+                </h2>
+            
                 <div className="flex flex-col gap-4">
-                    <label className="flex items-center gap-2">
+                    {/* Nom */}
+                    <div className="flex items-center gap-2">
                         <FaUser className="text-gray-500" />
-                        Nom:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.Nom} onChange={(e) => setFilters({ ...filters, Nom: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Nom" 
+                            value={filters.Nom} 
+                            onChange={(e) => setFilters({ ...filters, Nom: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Prénom */}
+                    <div className="flex items-center gap-2">
                         <FaUserPlus className="text-gray-500" />
-                        Prénom:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.Prenom} onChange={(e) => setFilters({ ...filters, Prenom: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Prénom" 
+                            value={filters.Prenom} 
+                            onChange={(e) => setFilters({ ...filters, Prenom: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* CODE */}
+                    <div className="flex items-center gap-2">
                         <FaBarcode className="text-gray-500" />
-                        CODE:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.CODE} onChange={(e) => setFilters({ ...filters, CODE: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="CODE" 
+                            value={filters.CODE} 
+                            onChange={(e) => setFilters({ ...filters, CODE: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Date de Naissance */}
+                    <div className="flex items-center gap-2">
                         <FaCalendarAlt className="text-gray-500" />
-                        Date de Naissance:
-                        <input type="date" className="border p-2 w-full rounded" value={filters.date_naissance} onChange={(e) => setFilters({ ...filters, date_naissance: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
-                        <FaUserFriends className="text-gray-500" />
-                        Age Premier Contact:
-                        <input type="number" className="border p-2 w-full rounded" value={filters.age_premier_contact} onChange={(e) => setFilters({ ...filters, age_premier_contact: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="date" 
+                            value={filters.date_naissance} 
+                            onChange={(e) => setFilters({ ...filters, date_naissance: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Sexe */}
+                    <div className="flex items-center gap-2">
                         <FaVenusMars className="text-gray-500" />
-                        Sexe:
-                        <select className="border p-2 w-full rounded" value={filters.SEXE} onChange={(e) => setFilters({ ...filters, SEXE: e.target.value })}>
+                        <select 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500" 
+                            value={filters.SEXE} 
+                            onChange={(e) => setFilters({ ...filters, SEXE: e.target.value })}
+                        >
                             <option value="">Sélectionner</option>
                             <option value="M">M</option>
                             <option value="F">F</option>
                         </select>
-                    </label>
-                    <label className="flex items-center gap-2">
+                    </div>
+            
+                    {/* Nom de la Mère */}
+                    <div className="flex items-center gap-2">
                         <FaUserTie className="text-gray-500" />
-                        Nom de la Mère:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.NomMere} onChange={(e) => setFilters({ ...filters, NomMere: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Nom de la Mère" 
+                            value={filters.NomMere} 
+                            onChange={(e) => setFilters({ ...filters, NomMere: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Nom du Père */}
+                    <div className="flex items-center gap-2">
                         <FaUserTie className="text-gray-500" />
-                        Nom du Père:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.NomPere} onChange={(e) => setFilters({ ...filters, NomPere: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Nom du Père" 
+                            value={filters.NomPere} 
+                            onChange={(e) => setFilters({ ...filters, NomPere: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Domicile */}
+                    <div className="flex items-center gap-2">
                         <FaHome className="text-gray-500" />
-                        Domicile:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.Domicile} onChange={(e) => setFilters({ ...filters, Domicile: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Domicile" 
+                            value={filters.Domicile} 
+                            onChange={(e) => setFilters({ ...filters, Domicile: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Fokotany */}
+                    <div className="flex items-center gap-2">
                         <FaHome className="text-gray-500" />
-                        Fokotany:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.Fokotany} onChange={(e) => setFilters({ ...filters, Fokotany: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Fokotany" 
+                            value={filters.Fokotany} 
+                            onChange={(e) => setFilters({ ...filters, Fokotany: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Hameau */}
+                    <div className="flex items-center gap-2">
                         <FaHome className="text-gray-500" />
-                        Hameau:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.Hameau} onChange={(e) => setFilters({ ...filters, Hameau: e.target.value })} />
-                    </label>
-                    <label className="flex items-center gap-2">
+                        <Input 
+                            type="text" 
+                            placeholder="Hameau" 
+                            value={filters.Hameau} 
+                            onChange={(e) => setFilters({ ...filters, Hameau: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+            
+                    {/* Téléphone */}
+                    <div className="flex items-center gap-2">
                         <FaPhone className="text-gray-500" />
-                        Téléphone:
-                        <input type="text" className="border p-2 w-full rounded" value={filters.Telephone} onChange={(e) => setFilters({ ...filters, Telephone: e.target.value })} />
-                    </label>
+                        <Input 
+                            type="text" 
+                            placeholder="Téléphone" 
+                            value={filters.Telephone} 
+                            onChange={(e) => setFilters({ ...filters, Telephone: e.target.value })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    {/* Age Min */}
+                    <div className="flex items-center gap-2">
+                        <FaUserFriends className="text-gray-500" />
+                        <Input 
+                            type="number" 
+                            placeholder="Âge Min" 
+                            value={filters.age_min} 
+                            onChange={(e) => {
+                                const age_min = e.target.value;
+                                setFilters({ ...filters, age_min, age_max: Math.max(filters.age_max, age_min) });
+                            }} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    {/* Age Max */}
+                    <div className="flex items-center gap-2">
+                        <FaUserFriends className="text-gray-500" />
+                        <Input 
+                            type="number" 
+                            placeholder="Âge Max" 
+                            value={filters.age_max} 
+                            onChange={(e) => setFilters({ ...filters, age_max: Math.max(e.target.value, filters.age_min) })} 
+                            className="border p-2 w-full rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    {/* Reset Filters Button */}
+                    <Button variant="outline" onClick={resetFilters} className="mt-4">
+                        Réinitialiser les filtres
+                    </Button>
                 </div>
             </div>
 
