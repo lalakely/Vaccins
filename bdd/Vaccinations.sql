@@ -1,0 +1,14 @@
+USE csb;
+
+CREATE TABLE IF NOT EXISTS Vaccinations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    enfant_id INT NOT NULL,
+    vaccin_id INT NOT NULL,
+    date_vaccination DATE NOT NULL,
+    remarque TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (enfant_id) REFERENCES Enfants(id) ON DELETE CASCADE,
+    FOREIGN KEY (vaccin_id) REFERENCES Vaccins(id) ON DELETE CASCADE
+);

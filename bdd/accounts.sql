@@ -1,8 +1,11 @@
 USE csb;
-CREATE TABLE accounts (
-    account_id INT AUTO_INCREMENT PRIMARY KEY, -- Identifiant unique pour chaque compte
-    username VARCHAR(50) NOT NULL UNIQUE,      -- Nom d'utilisateur unique
-    password_hash VARCHAR(255) NOT NULL,       -- Mot de passe (hashé pour des raisons de sécurité)
-    account_type ENUM('visitor', 'doctor', 'admin') NOT NULL, -- Type de compte : visiteur, docteur ou administrateur
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Date de création du compte
+
+CREATE TABLE IF NOT EXISTS logins (
+    user_id INT NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    status ENUM('connecté', 'déconnecté') DEFAULT 'connecté',
+    last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
