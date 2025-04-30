@@ -92,6 +92,24 @@ exports.updateEnfant = async (req, res) => {
     `;
 
     try {
+        console.log('Updating child with ID:', enfantId);
+        console.log('Update query:', query);
+        console.log('Update values:', [
+            Nom,
+            Prenom,
+            CODE,
+            date_naissance,
+            age_premier_contact,
+            SEXE,
+            NomMere,
+            NomPere,
+            Domicile,
+            Fokotany,
+            Hameau,
+            Telephone,
+            enfantId,
+        ]);
+
         const [result] = await db.query(query, [
             Nom,
             Prenom,
@@ -120,15 +138,20 @@ exports.updateEnfant = async (req, res) => {
 // Delete a child from the list
 exports.deleteEnfant = async (req, res) => {
     const enfantId = req.params.id;
-
+  
     try {
-        const [result] = await db.query("DELETE FROM Enfants WHERE id = ?", [enfantId]);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Enfant non trouvé" });
-        }
-        res.json({ message: "Enfant supprimé avec succès" });
+      console.log("Tentative de suppression de l'enfant avec ID :", enfantId);
+      // Supprimer d'abord les vaccinations associées
+      await db.query("DELETE FROM Vaccinations WHERE enfant_id = ?", [enfantId]);
+      const [result] = await db.query("DELETE FROM Enfants WHERE id = ?", [enfantId]);
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Enfant non trouvé" });
+      }
+  
+      res.json({ message: "Enfant supprimé avec succès" });
     } catch (err) {
-        console.error('Error deleting child:', err);
-        res.status(500).json({ message: 'Erreur interne du serveur' });
+      console.error("Erreur détaillée lors de la suppression :", err);
+      res.status(500).json({ message: "Erreur interne du serveur", error: err.message });
     }
-};
+  };

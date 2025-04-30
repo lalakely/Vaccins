@@ -8,6 +8,7 @@ import Connexion from './pages/Connexion';
 import Inscription from './pages/Inscription';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './contexts/ProtectedRoute';
+import DashboardPage from "./pages/DashboardPage";
 
 function App() {
     return (
@@ -50,6 +51,14 @@ function App() {
                                 <Hameau />
                             </ProtectedRoute>
                         }
+                    />
+                    <Route 
+                        path="/dashboard" 
+                        element={
+                            <ProtectedRoute>
+                                 <DashboardPage />
+                            </ProtectedRoute>
+                        } 
                     />
                 </Routes>
             </Router>

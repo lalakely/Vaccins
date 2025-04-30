@@ -36,7 +36,7 @@ exports.loginUser = async (req, res) => {
         const token = jwt.sign(
             { id: user.id, username: user.username, accountType: user.account_type },
             process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "1d" }
         );
 
         // 📌 Mettre à jour l'état de l'utilisateur à "connecté"
