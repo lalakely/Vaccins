@@ -68,9 +68,9 @@ export default function VaccineList() {
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Détails du vaccin</DialogTitle>
+                <DialogContent className="max-w-7xl w-[95%] p-0">
+                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-red-100 via-white to-red-100 border-b border-red-200">
+                        <DialogTitle className="text-2xl font-bold text-red-700">Détails du vaccin</DialogTitle>
                     </DialogHeader>
                     {selectedVaccine && <VaccinePopup vaccine={selectedVaccine} onClose={closePopup} />}
                 </DialogContent>

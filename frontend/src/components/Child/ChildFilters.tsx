@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Filter } from "lucide-react";
+import axios from "axios";
 import {
   FaUser,
   FaUserPlus,
@@ -12,6 +13,7 @@ import {
   FaPhone,
   FaUserTie,
   FaUserFriends,
+  FaSyringe,
 } from "react-icons/fa";
 
 interface Filters {
@@ -28,6 +30,9 @@ interface Filters {
   Telephone: string;
   age_min: string;
   age_max: string;
+  vaccin_id: string;
+  show_not_vaccinated: boolean;
+  rappel_count: number | null;
 }
 
 interface ChildFiltersProps {
@@ -37,12 +42,33 @@ interface ChildFiltersProps {
   setIsFilterOpen: (open: boolean) => void;
 }
 
+interface Vaccin {
+  id: number;
+  Nom: string;
+}
+
 export default function ChildFilters({
   filters,
   setFilters,
   isFilterOpen,
   setIsFilterOpen,
 }: ChildFiltersProps) {
+  const [vaccins, setVaccins] = useState<Vaccin[]>([]);
+  // Nombre fixe de rappels à afficher
+  const maxRappels = 3;
+  
+  useEffect(() => {
+    // Récupérer la liste des vaccins lors du chargement du composant
+    axios
+      .get("http://localhost:3000/api/vaccins")
+      .then((response) => {
+        setVaccins(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching vaccines:", error);
+      });
+  }, []);
+
   const resetFilters = () => {
     setFilters({
       Nom: "",
@@ -58,6 +84,9 @@ export default function ChildFilters({
       Telephone: "",
       age_min: "",
       age_max: "",
+      vaccin_id: "",
+      show_not_vaccinated: false,
+      rappel_count: null,
     });
   };
 
@@ -67,8 +96,8 @@ export default function ChildFilters({
       <Button
         variant="outline"
         onClick={() => setIsFilterOpen(!isFilterOpen)}
-        className={`fixed top-1/2 right-4 transform -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-2 rounded-full shadow-md hover:bg-gray-200 transition-all z-50 ${
-          isFilterOpen ? "right-[275px]" : "right-[15px]"
+        className={`fixed top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-2 rounded-full shadow-md hover:bg-gray-200 transition-all z-50 ${
+          isFilterOpen ? "right-[360px]" : "right-[15px]"
         }`}
       >
         <Filter className="w-5 h-5" />
@@ -76,38 +105,41 @@ export default function ChildFilters({
 
       {/* Tiroir des filtres (style cohérent avec la sidebar) */}
       <div
-        className={`fixed top-0 right-0 h-full max-w-[256px] w-full bg-muted p-5 shadow-lg flex flex-col justify-start transform transition-transform duration-300 ease-in-out z-40 ${
-          isFilterOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`${isFilterOpen ? "w-[350px]" : "w-0"} 
+          h-full bg-white shadow-lg transform transition-all duration-300 fixed top-0 right-0 z-30 pt-14
+          border-l border-gray-200 flex flex-col`}
       >
-        <h2 className="text-xl font-semibold text-muted-foreground mb-6 flex items-center gap-2">
-          <Filter className="w-6 h-6 text-gray-600" /> Filtres
-        </h2>
+        <div className="p-4 bg-white border-b sticky top-0 z-10">
+          <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
+            <Filter className="w-6 h-6 text-primary" /> Filtres
+          </h2>
+        </div>
 
-        <div className="flex flex-col gap-3">
-          {/* Nom */}
-          <div className="flex items-center gap-2">
-            <FaUser className="text-gray-600 w-5 h-5" />
-            <Input
-              type="text"
-              placeholder="Nom"
-              value={filters.Nom}
-              onChange={(e) => setFilters({ ...filters, Nom: e.target.value })}
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          <div className="flex flex-col gap-4">
+            {/* Nom */}
+            <div className="flex items-center gap-2">
+              <FaUser className="text-gray-600 w-5 h-5" />
+              <Input
+                type="text"
+                placeholder="Nom"
+                value={filters.Nom}
+                onChange={(e) => setFilters({ ...filters, Nom: e.target.value })}
+                className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              />
+              </div>
 
-          {/* Prénom */}
-          <div className="flex items-center gap-2">
-            <FaUserPlus className="text-gray-600 w-5 h-5" />
-            <Input
-              type="text"
-              placeholder="Prénom"
-              value={filters.Prenom}
-              onChange={(e) => setFilters({ ...filters, Prenom: e.target.value })}
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
-            />
-          </div>
+            {/* Prénom */}
+            <div className="flex items-center gap-2">
+              <FaUserPlus className="text-gray-600 w-5 h-5" />
+              <Input
+                type="text"
+                placeholder="Prénom"
+                value={filters.Prenom}
+                onChange={(e) => setFilters({ ...filters, Prenom: e.target.value })}
+                className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              />
+            </div>
 
           {/* CODE */}
           <div className="flex items-center gap-2">
@@ -119,7 +151,7 @@ export default function ChildFilters({
               onChange={(e) => setFilters({ ...filters, CODE: e.target.value })}
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Date de Naissance */}
           <div className="flex items-center gap-2">
@@ -132,7 +164,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Sexe */}
           <div className="flex items-center gap-2">
@@ -146,7 +178,7 @@ export default function ChildFilters({
               <option value="M">Masculin</option>
               <option value="F">Féminin</option>
             </select>
-          </div>
+            </div>
 
           {/* Nom de la Mère */}
           <div className="flex items-center gap-2">
@@ -160,7 +192,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Nom du Père */}
           <div className="flex items-center gap-2">
@@ -174,7 +206,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Domicile */}
           <div className="flex items-center gap-2">
@@ -188,7 +220,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Fokotany */}
           <div className="flex items-center gap-2">
@@ -202,7 +234,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Hameau */}
           <div className="flex items-center gap-2">
@@ -216,7 +248,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Téléphone */}
           <div className="flex items-center gap-2">
@@ -230,7 +262,7 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Âge Min */}
           <div className="flex items-center gap-2">
@@ -249,7 +281,7 @@ export default function ChildFilters({
               }}
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
 
           {/* Âge Max */}
           <div className="flex items-center gap-2">
@@ -266,7 +298,87 @@ export default function ChildFilters({
               }
               className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
-          </div>
+            </div>
+
+          {/* Filtre par Vaccin */}
+          <div className="flex items-center gap-2">
+            <FaSyringe className="text-gray-600 w-5 h-5" />
+            <select
+              value={filters.vaccin_id}
+              onChange={(e) => setFilters({ ...filters, vaccin_id: e.target.value, show_not_vaccinated: false })}
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all w-full p-2"
+            >
+              <option value="">Sélectionner un vaccin</option>
+              {vaccins.map((vaccin) => (
+                <option key={vaccin.id} value={vaccin.id}>
+                  {vaccin.Nom}
+                </option>
+              ))}
+            </select>
+            </div>
+
+          {/* Option pour afficher les non-vaccinés */}
+          {filters.vaccin_id && (
+            <div className="flex flex-col gap-2 mt-2 border-t pt-2">
+              {/* Case à cocher pour les enfants non vaccinés */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="show_not_vaccinated"
+                  checked={filters.show_not_vaccinated}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      // Si on coche cette option, on désactive les filtres de rappel
+                      setFilters({ ...filters, show_not_vaccinated: true, rappel_count: null });
+                    } else {
+                      setFilters({ ...filters, show_not_vaccinated: false });
+                    }
+                  }}
+                  className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-offset-0 focus:ring-primary"
+                />
+                <label htmlFor="show_not_vaccinated" className="text-gray-600 cursor-pointer select-none">
+                  Afficher les enfants non vaccinés
+                </label>
+                </div>
+              
+              {/* Filtres pour les rappels (uniquement disponibles si les non-vaccinés n'est pas coché) */}
+              {!filters.show_not_vaccinated && (
+                <div className="mt-2 border-t pt-2">
+                  <p className="text-sm font-medium text-gray-600 mb-2">Filtrer par nombre de rappels :</p>
+                  <div className="flex flex-col gap-1">
+                    {[...Array(maxRappels + 1)].map((_, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          id={`rappel_${index}`}
+                          name="rappel_count"
+                          checked={filters.rappel_count === index}
+                          onChange={() => setFilters({ ...filters, rappel_count: index })}
+                          className="h-4 w-4 text-primary border-gray-300 focus:ring-2 focus:ring-offset-0 focus:ring-primary"
+                        />
+                        <label htmlFor={`rappel_${index}`} className="text-gray-600 cursor-pointer select-none">
+                          {index === 0 ? 'Dose initiale' : `${index} rappel${index > 1 ? 's' : ''}`}
+                        </label>
+                      </div>
+                    ))}
+                    <div key="all" className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="rappel_all"
+                        name="rappel_count"
+                        checked={filters.rappel_count === null}
+                        onChange={() => setFilters({ ...filters, rappel_count: null })}
+                        className="h-4 w-4 text-primary border-gray-300 focus:ring-2 focus:ring-offset-0 focus:ring-primary"
+                      />
+                      <label htmlFor="rappel_all" className="text-gray-600 cursor-pointer select-none">
+                        Tous les enfants vaccinés
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Bouton Réinitialiser (style cohérent avec les boutons de NavBar) */}
           <Button
@@ -276,6 +388,7 @@ export default function ChildFilters({
           >
             Réinitialiser les filtres
           </Button>
+          </div>
         </div>
       </div>
     </>

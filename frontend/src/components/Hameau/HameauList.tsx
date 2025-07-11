@@ -6,9 +6,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react"; // Icônes pour affichage vide et chargement
 
+// Définir l'interface pour un Hameau
+interface Hameau {
+    ID?: number;
+    id?: number;
+    Nom: string;
+    px: number;
+    py: number;
+    nombre_personne?: number;
+    nombre_enfant?: number;
+    nombre_enfant_vaccines?: number;
+    [key: string]: any;
+}
+
 export default function HameauList() {
-    const [data, setData] = useState([]);
-    const [selectedHameau, setSelectedHameau] = useState(null);
+    const [data, setData] = useState<Hameau[]>([]);
+    const [selectedHameau, setSelectedHameau] = useState<Hameau | null>(null);
     const [showPopup, setShowPopup] = useState(false);
     const [loading, setLoading] = useState(true); // Ajout de l'état de chargement
 
@@ -23,7 +36,7 @@ export default function HameauList() {
             .finally(() => setLoading(false)); // Fin du chargement
     }, []);
 
-    const handleDetailsClick = (hameau) => {
+    const handleDetailsClick = (hameau: Hameau) => {
         setSelectedHameau(hameau);
         setShowPopup(true);
     };
@@ -59,7 +72,7 @@ export default function HameauList() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {data.map((hameau) => (
                         <HameauCard 
-                            key={hameau.ID}
+                            key={hameau.ID || hameau.id}
                             hameau={hameau}
                             onDetailsClick={handleDetailsClick}
                         />
@@ -68,9 +81,9 @@ export default function HameauList() {
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Détails du hameau</DialogTitle>
+                <DialogContent className="max-w-7xl w-[95%] p-0">
+                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-blue-100 via-white to-blue-100 border-b border-blue-200">
+                        <DialogTitle className="text-2xl font-bold text-blue-700">Détails du hameau</DialogTitle>
                     </DialogHeader>
                     {selectedHameau && <HameauPopup hameau={selectedHameau} onClose={closePopup} />}
                 </DialogContent>

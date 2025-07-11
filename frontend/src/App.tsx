@@ -9,6 +9,7 @@ import Inscription from './pages/Inscription';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './contexts/ProtectedRoute';
 import DashboardPage from "./pages/DashboardPage";
+import ChildHistoryPage from "./pages/ChildHistoryPage";
 
 function App() {
     return (
@@ -57,6 +58,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                  <DashboardPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/historique-enfants" 
+                        element={
+                            <ProtectedRoute>
+                                 <ChildHistoryPage />
                             </ProtectedRoute>
                         } 
                     />

@@ -68,9 +68,9 @@ export default function FokotanyList() {
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Détails du fokotany</DialogTitle>
+                <DialogContent className="max-w-7xl w-[95%] p-0">
+                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-green-100 via-white to-green-100 border-b border-green-200">
+                        <DialogTitle className="text-2xl font-bold text-green-700">Détails du fokotany</DialogTitle>
                     </DialogHeader>
                     {selectedFokotany && <FokotanyPopup fokotany={selectedFokotany} onClose={closePopup} />}
                 </DialogContent>

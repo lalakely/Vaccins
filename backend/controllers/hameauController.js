@@ -85,12 +85,163 @@ exports.deleteHameau = async (req, res) => {
 
     try {
         const [result] = await db.query("DELETE FROM Hameau WHERE id = ?", [hameauId]);
+        
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Hameau non trouvé" });
         }
+
         res.json({ message: "Hameau supprimé avec succès" });
     } catch (err) {
         console.error('Error deleting Hameau:', err);
         res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+};
+
+// Count children in a Hameau
+exports.countEnfantsInHameau = async (req, res) => {
+    const hameauId = req.params.id;
+
+    try {
+        // Vérifier d'abord si le hameau existe
+        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE ID = ?", [hameauId]);
+        
+        if (hameauResult.length === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
+        }
+
+        // Récupérer le nom du hameau pour la requête
+        const hameauNom = hameauResult[0].Nom;
+
+        // Compter les enfants dans ce hameau
+        const [countResult] = await db.query(
+            "SELECT COUNT(*) as count FROM Enfants WHERE Hameau = ?", 
+            [hameauNom]
+        );
+
+        res.json({ count: countResult[0].count });
+    } catch (err) {
+        console.error('Error counting children in Hameau:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur', error: err });
+    }
+};
+
+// Count vaccinated children in a Hameau
+exports.countVaccinatedEnfantsInHameau = async (req, res) => {
+    const hameauId = req.params.id;
+
+    try {
+        // Vérifier d'abord si le hameau existe
+        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE ID = ?", [hameauId]);
+        
+        if (hameauResult.length === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
+        }
+
+        // Récupérer le nom du hameau pour la requête
+        const hameauNom = hameauResult[0].Nom;
+
+        // Compter le nombre total d'enfants dans ce hameau
+        const [totalResult] = await db.query(
+            "SELECT COUNT(*) as total FROM Enfants WHERE Hameau = ?", 
+            [hameauNom]
+        );
+
+        // Compter les enfants vaccinés dans ce hameau
+        // Un enfant est considéré comme vacciné s'il a au moins un vaccin administré
+        const [vaccinatedResult] = await db.query(
+            `SELECT COUNT(DISTINCT e.ID) as vaccinated 
+             FROM Enfants e 
+             JOIN Vaccinations v ON e.ID = v.enfant_id 
+             WHERE e.Hameau = ? AND v.statut = 'administré'`, 
+            [hameauNom]
+        );
+
+        const total = totalResult[0].total;
+        const vaccinated = vaccinatedResult[0].vaccinated;
+        const percentage = total > 0 ? Math.round((vaccinated / total) * 100) : 0;
+
+        res.json({ 
+            total, 
+            vaccinated, 
+            percentage 
+        });
+    } catch (err) {
+        console.error('Error counting vaccinated children in Hameau:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur', error: err });
+    }
+};
+
+// Get vaccination statistics for a Hameau
+exports.getHameauStats = async (req, res) => {
+    const hameauId = req.params.id;
+
+    try {
+        // Vérifier d'abord si le hameau existe
+        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE id = ?", [hameauId]);
+        
+        if (hameauResult.length === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
+        }
+
+        // Récupérer le nom du hameau pour la requête
+        const hameauNom = hameauResult[0].Nom;
+
+        // Compter le nombre total d'enfants dans ce hameau
+        const [totalResult] = await db.query(
+            "SELECT COUNT(*) as total FROM Enfants WHERE Hameau = ?", 
+            [hameauNom]
+        );
+
+        // Compter les enfants vaccinés dans ce hameau
+        // Un enfant est considéré comme vacciné s'il a au moins un vaccin administré
+        const [vaccinatedResult] = await db.query(
+            `SELECT COUNT(DISTINCT e.ID) as vaccinated 
+             FROM Enfants e 
+             JOIN Vaccinations v ON e.ID = v.enfant_id 
+             WHERE e.Hameau = ? AND v.statut = 'administré'`, 
+            [hameauNom]
+        );
+
+        const total_enfants = totalResult[0].total;
+        const enfants_vaccines = vaccinatedResult[0].vaccinated;
+
+        res.json({ 
+            total_enfants, 
+            enfants_vaccines
+        });
+    } catch (err) {
+        console.error('Error getting Hameau stats:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur', error: err });
+    }
+};
+
+// Get vaccinations for a Hameau
+exports.getHameauVaccinations = async (req, res) => {
+    const hameauId = req.params.id;
+
+    try {
+        // Vérifier d'abord si le hameau existe
+        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE id = ?", [hameauId]);
+        
+        if (hameauResult.length === 0) {
+            return res.status(404).json({ message: "Hameau non trouvé" });
+        }
+
+        // Récupérer le nom du hameau pour la requête
+        const hameauNom = hameauResult[0].Nom;
+
+        // Récupérer toutes les vaccinations pour les enfants de ce hameau
+        const [vaccinations] = await db.query(
+            `SELECT v.* 
+             FROM Vaccinations v
+             JOIN Enfants e ON v.enfant_id = e.ID
+             WHERE e.Hameau = ? AND v.statut = 'administré'`, 
+            [hameauNom]
+        );
+
+        res.json(vaccinations);
+    } catch (err) {
+        console.error('Error getting Hameau vaccinations:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur', error: err });
     }
 };
