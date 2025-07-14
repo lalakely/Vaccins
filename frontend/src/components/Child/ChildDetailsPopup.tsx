@@ -25,11 +25,35 @@ import {
 } from "@/components/ui/select";
 import ChildVaccinations from "./ChildVaccinations";
 
-function ChildDetailsPopup({ enfant, onClose }) {
+// Ajout d'une interface pour les props
+interface Enfant {
+  id: number;
+  Nom: string;
+  Prenom: string;
+  CODE: string;
+  date_naissance: string;
+  age_premier_contact: number;
+  SEXE: string;
+  NomMere: string;
+  NomPere: string;
+  Domicile: string;
+  Fokotany: string;
+  Hameau: string;
+  Telephone: string;
+  // Ajoutez d'autres champs si nécessaire
+}
+
+interface ChildDetailsPopupProps {
+  enfant: Enfant;
+  onClose: () => void;
+}
+
+function ChildDetailsPopup({ enfant, onClose }: ChildDetailsPopupProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ ...enfant });
 
-  const handleChange = (e) => {
+  // Typage du paramètre e
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
