@@ -1,5 +1,6 @@
 const db = require('../config/db'); // Pool MySQL compatible avec les promesses
 const { promisify } = require('util');
+const notificationsController = require('./notificationsController');
 
 // Add a new child
 exports.createEnfant = async (req, res) => {
@@ -289,6 +290,34 @@ exports.deleteEnfant = async (req, res) => {
       // 3. Supprimer l'enfant lui-même
       console.log(`Suppression de l'enfant ID: ${enfantId}`);
       const [result] = await connection.query("DELETE FROM Enfants WHERE id = ?", [enfantId]);
+      
+      // Créer une notification pour informer de la suppression
+      try {
+        await notificationsController.createSystemNotification(
+          req.user?.id, // ID de l'utilisateur qui a effectué la suppression
+          "Enfant supprimé",
+          `L'enfant ${oldData.Prenom} ${oldData.Nom} a été supprimé du système`,
+          "warning",
+          "action_feedback",
+          "/Personnes",
+          null,
+          null
+        );
+        
+        // Notification pour les statistiques
+        await notificationsController.createSystemNotification(
+          null, // Notification globale
+          "Mise à jour des statistiques",
+          `Un enfant a été retiré de la base de données : ${oldData.Prenom} ${oldData.Nom}`,
+          "info",
+          "statistics",
+          "/dashboard"
+        );
+      } catch (notifError) {
+        // Ne pas bloquer le processus si la création de notification échoue
+        console.error('Erreur lors de la création des notifications de suppression :', notifError);
+        // La suppression a été effectuée, donc on continue
+      }
       
       // 4. Vérifier si la table DeletedChildrenLog existe, sinon la créer
       try {

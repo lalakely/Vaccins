@@ -8,7 +8,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadialBarChart, RadialBar, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import useNotificationService from "../../hooks/useNotificationService";
 import {
   ChartConfig,
   ChartContainer
@@ -39,6 +40,8 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [vaccinationStats, setVaccinationStats] = useState<{total: number, vaccinated: number, percentage: number}>({total: 0, vaccinated: 0, percentage: 0});
   const [chartLoading, setChartLoading] = useState<boolean>(true);
+  const { showSuccess, showError, showWarning } = useNotificationService();
+  const warningShown = useRef<boolean>(false); // Pour suivre si l'avertissement a déjà été affiché
 
   // Configuration du graphique
   const chartConfig = {
@@ -74,6 +77,18 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
             fill: "hsl(var(--chart-1))"
           }
         ]);
+        
+        // Afficher une notification si le taux de vaccination est faible (une seule fois)
+        if (percentage < 50 && !warningShown.current) {
+          showWarning("Couverture vaccinale faible", 
+            `Le taux de vaccination dans le fokotany ${fokotany.Nom} est de ${percentage}%, en dessous de l'objectif de 80%`, {
+            category: "statistics",
+            actionLink: `/Fokotany?id=${fokotany.ID}`,
+            entityType: "fokotany",
+            entityId: fokotany.ID
+          });
+          warningShown.current = true; // Marquer que l'avertissement a été affiché
+        }
       }
     } catch (error) {
       console.error("Erreur lors du chargement des statistiques :", error);
@@ -100,11 +115,15 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
 
     try {
       await axios.delete(`http://localhost:3000/api/fokotany/${fokotany.ID}`);
-      alert("Fokotany supprimé avec succès !");
+      showSuccess("Suppression réussie", `Le fokotany ${fokotany.Nom} a été supprimé avec succès`, {
+        actionLink: "/Fokotany",
+        entityType: "fokotany",
+        entityId: fokotany.ID
+      });
       onClose();
     } catch (error) {
       console.error("Erreur réseau :", error);
-      alert("Échec de la suppression.");
+      showError("Échec de la suppression", `Une erreur est survenue lors de la suppression du fokotany ${fokotany.Nom}`);
     } finally {
       setLoading(false);
     }
@@ -112,7 +131,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <MapPinIcon className="h-6 w-6 text-green-500" />

@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import FokotanyCard from "./FokotanyCard";
 import FokotanyPopup from "./FokotanyPopup";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react"; // Icônes pour affichage vide et chargement
 
@@ -67,13 +67,8 @@ export default function FokotanyList() {
                 </div>
             )}
 
-            <Dialog open={showPopup} onOpenChange={setShowPopup}>
-                <DialogContent className="max-w-7xl w-[95%] p-0">
-                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-green-100 via-white to-green-100 border-b border-green-200">
-                        <DialogTitle className="text-2xl font-bold text-green-700">Détails du fokotany</DialogTitle>
-                    </DialogHeader>
-                    {selectedFokotany && <FokotanyPopup fokotany={selectedFokotany} onClose={closePopup} />}
-                </DialogContent>
+            <Dialog open={showPopup} onOpenChange={setShowPopup}>  
+                {selectedFokotany && <FokotanyPopup fokotany={selectedFokotany} onClose={closePopup} />}
             </Dialog>
         </div>
     );

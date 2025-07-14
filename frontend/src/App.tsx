@@ -7,6 +7,8 @@ import Hameau from './pages/Hameau';
 import Connexion from './pages/Connexion';
 import Inscription from './pages/Inscription';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import ToastContainer from './components/notifications/ToastContainer';
 import ProtectedRoute from './contexts/ProtectedRoute';
 import DashboardPage from "./pages/DashboardPage";
 import ChildHistoryPage from "./pages/ChildHistoryPage";
@@ -14,8 +16,10 @@ import ChildHistoryPage from "./pages/ChildHistoryPage";
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <Routes>
+            <NotificationProvider>
+                <Router>
+                    <ToastContainer />
+                    <Routes>
                     {/* Routes publiques */}
                     <Route path="/" element={<Connexion />} />
                     <Route path="/Inscription" element={<Inscription />} />
@@ -70,7 +74,8 @@ function App() {
                         } 
                     />
                 </Routes>
-            </Router>
+                </Router>
+            </NotificationProvider>
         </AuthProvider>
     );
 }

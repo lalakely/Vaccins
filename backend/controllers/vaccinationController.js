@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const notificationsController = require('./notificationsController');
 
 exports.createVaccination = async (req, res) => {
     const sql = `
@@ -27,6 +28,46 @@ exports.createVaccination = async (req, res) => {
             JOIN Vaccins vacc ON v.vaccin_id = vacc.id 
             WHERE v.id = ?
         `, [newVaccinationId]);
+        
+        // Récupérer les informations de l'enfant pour la notification
+        const [enfantInfo] = await db.query(`
+            SELECT e.*, p.Nom as parent_nom, p.Prenom as parent_prenom
+            FROM Enfants e
+            LEFT JOIN Parents p ON e.parent_id = p.id
+            WHERE e.id = ?
+        `, [req.body.enfant_id]);
+        
+        if (enfantInfo && enfantInfo.length > 0) {
+            try {
+                // Créer une notification pour l'administrateur
+                await notificationsController.createSystemNotification(
+                    req.user?.id, // ID de l'utilisateur qui a effectué la vaccination (s'il existe)
+                    "Vaccination effectuée",
+                    `${newVaccination[0].name} administré à ${enfantInfo[0].Prenom} ${enfantInfo[0].Nom}`,
+                    "success",
+                    "vaccination_alert",
+                    `/Personnes?id=${req.body.enfant_id}`,
+                    "enfant",
+                    req.body.enfant_id
+                );
+                
+                // Créer une notification globale pour les statistiques
+                await notificationsController.createSystemNotification(
+                    null, // Notification globale (pour tous les utilisateurs)
+                    "Statistique de vaccination",
+                    `Une nouvelle vaccination a été enregistrée : ${newVaccination[0].name}`,
+                    "info",
+                    "statistics",
+                    "/dashboard"
+                );
+                
+                console.log('Notifications de vaccination créées avec succès');
+            } catch (notifError) {
+                // Ne pas bloquer le processus si la création de notification échoue
+                console.error('Erreur lors de la création des notifications :', notifError);
+                // La vaccination a été enregistrée, donc on continue
+            }
+        }
 
         res.status(201).json(newVaccination[0]); // Retourner l'objet complet
     } catch (err) {

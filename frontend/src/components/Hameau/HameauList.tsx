@@ -1,10 +1,11 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import HameauCard from "./HameauCard";
 import HameauPopup from "./HameauPopup";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react"; // Icônes pour affichage vide et chargement
+import useNotificationService from "../../hooks/useNotificationService";
 
 // Définir l'interface pour un Hameau
 interface Hameau {
@@ -24,17 +25,41 @@ export default function HameauList() {
     const [selectedHameau, setSelectedHameau] = useState<Hameau | null>(null);
     const [showPopup, setShowPopup] = useState(false);
     const [loading, setLoading] = useState(true); // Ajout de l'état de chargement
+    const { showError, showInfo } = useNotificationService();
+    const notificationsShown = useRef<boolean>(false); // Pour suivre si les notifications ont déjà été affichées
 
     useEffect(() => {
         axios.get("http://localhost:3000/api/hameau")
             .then((response) => {
                 setData(response.data);
+                if (response.data.length > 0 && !notificationsShown.current) {
+                    // N'afficher les notifications qu'une seule fois par session
+                    showInfo("Données chargées", `${response.data.length} hameaux ont été chargés`);
+                    
+                    // Vérifier les hameaux avec une faible couverture vaccinale
+                    const lowVaccinationHameaux = response.data.filter((h: Hameau) => {
+                        const percentage = h.nombre_enfant && h.nombre_enfant > 0 ? 
+                            Math.round(((h.nombre_enfant_vaccines || 0) / h.nombre_enfant) * 100) : 0;
+                        return percentage < 50;
+                    });
+                    
+                    if (lowVaccinationHameaux.length > 0) {
+                        showError("Alerte de vaccination", 
+                            `${lowVaccinationHameaux.length} hameaux ont une couverture vaccinale inférieure à 50%`, {
+                            actionLink: "/Hameau"
+                        });
+                    }
+                    
+                    // Marquer que les notifications ont été affichées
+                    notificationsShown.current = true;
+                }
             })
             .catch((error) => {
                 console.error("Error fetching data:", error);
+                showError("Erreur de chargement", "Impossible de charger la liste des hameaux. Veuillez réessayer plus tard.");
             })
             .finally(() => setLoading(false)); // Fin du chargement
-    }, []);
+    }, [showInfo, showError]);
 
     const handleDetailsClick = (hameau: Hameau) => {
         setSelectedHameau(hameau);
@@ -81,12 +106,7 @@ export default function HameauList() {
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>
-                <DialogContent className="max-w-7xl w-[95%] p-0">
-                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-blue-100 via-white to-blue-100 border-b border-blue-200">
-                        <DialogTitle className="text-2xl font-bold text-blue-700">Détails du hameau</DialogTitle>
-                    </DialogHeader>
-                    {selectedHameau && <HameauPopup hameau={selectedHameau} onClose={closePopup} />}
-                </DialogContent>
+                {selectedHameau && <HameauPopup hameau={selectedHameau} onClose={closePopup} />}
             </Dialog>
         </div>
     );

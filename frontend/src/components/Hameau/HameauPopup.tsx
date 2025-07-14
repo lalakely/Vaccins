@@ -7,7 +7,8 @@ import {
 } from "@heroicons/react/24/solid";
 import VaccineCoverageChart from "../charts/VaccineCoverageChart";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import useNotificationService from "../../hooks/useNotificationService";
 import {
   PolarAngleAxis,
   PolarRadiusAxis,
@@ -41,6 +42,8 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [vaccinationStats, setVaccinationStats] = useState<{total: number, vaccinated: number, percentage: number}>({total: 0, vaccinated: 0, percentage: 0});
   const [chartLoading, setChartLoading] = useState(true);
+  const { showSuccess, showError, showWarning } = useNotificationService();
+  const warningShown = useRef<boolean>(false); // Pour suivre si l'avertissement a déjà été affiché
   
   // Configuration du graphique
   const chartConfig = {
@@ -75,6 +78,18 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
             fill: "hsl(var(--chart-1))"
           }
         ]);
+        
+        // Afficher une notification si le taux de vaccination est faible (une seule fois)
+        if (percentage < 50 && !warningShown.current) {
+          showWarning("Couverture vaccinale faible", 
+            `Le taux de vaccination dans le hameau ${hameau.Nom} est de ${percentage}%, en dessous de l'objectif de 80%`, {
+            category: "statistics",
+            actionLink: `/Hameau?id=${hameau.ID || hameau.id}`,
+            entityType: "hameau",
+            entityId: hameau.ID || hameau.id
+          });
+          warningShown.current = true; // Marquer que l'avertissement a été affiché
+        }
       }
     } catch (error) {
       console.error("Erreur lors du chargement des statistiques :", error);
@@ -101,11 +116,15 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
 
     try {
       await axios.delete(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}`);
-      alert("Hameau supprimé avec succès !");
+      showSuccess("Suppression réussie", `Le hameau ${hameau.Nom} a été supprimé avec succès`, {
+        actionLink: "/Hameau",
+        entityType: "hameau",
+        entityId: hameau.ID || hameau.id
+      });
       onClose();
     } catch (error) {
       console.error("Erreur réseau :", error);
-      alert("Échec de la suppression.");
+      showError("Échec de la suppression", `Une erreur est survenue lors de la suppression du hameau ${hameau.Nom}`);
     } finally {
       setLoading(false);
     }
@@ -113,7 +132,7 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <MapIcon className="h-6 w-6 text-green-500" />

@@ -8,6 +8,7 @@ const fokotanyRoutes = require('./routes/fokotanyRoutes');
 const userRoutes = require('./routes/usersRoutes')
 const authRoutes = require('./routes/authRoutes');
 const VaccinationRoutes = require('./routes/vaccinationsRoutes');
+const notificationsRoutes = require('./routes/notificationsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use('/api' , fokotanyRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', VaccinationRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 
 app.listen( PORT , () => {

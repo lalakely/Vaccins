@@ -5,9 +5,9 @@ exports.registerUser = async (req, res) => {
     try {
         console.log('Requête reçue :', req.body);
 
-        const { username, email, accountType, password } = req.body;
+        const { username, accountType, password } = req.body;
 
-        if (!username || !email || !accountType || !password) {
+        if (!username   || !accountType || !password) {
             console.error('Données manquantes :', req.body);
             return res.status(400).json({ message: 'Données manquantes.' });
         }
@@ -18,8 +18,8 @@ exports.registerUser = async (req, res) => {
 
         // Insertion dans la base de données
         const [result] = await db.query(
-            'INSERT INTO users (username, email, account_type, password_hash) VALUES (?, ?, ?, ?)',
-            [username, email, accountType, hashedPassword]
+            'INSERT INTO users (username, account_type, password_hash) VALUES (?, ?, ?)',
+            [username, accountType, hashedPassword]
         );
 
         console.log('Utilisateur créé avec succès :', result);
