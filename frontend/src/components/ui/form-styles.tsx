@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 // Styles globaux pour les formulaires
 export const formStyles = {
   // Conteneurs
-  card: "bg-white shadow-lg rounded-xl border border-gray-100 transition-all hover:shadow-xl",
+  card: "bg-white border border-gray-100 transition-all rounded-xl",
   cardHeader: "bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-xl border-b border-gray-100 p-6",
   cardTitle: "text-2xl font-bold text-gray-800 text-center flex items-center justify-center gap-2",
   cardContent: "space-y-6 p-6",
@@ -30,23 +30,23 @@ export const formStyles = {
   successText: "text-green-600 text-xs mt-1 flex items-center gap-1",
   
   // Messages d'alerte
-  alertSuccess: "bg-green-50 border border-green-100 text-green-700 rounded-lg p-4 mb-4",
-  alertError: "bg-red-50 border border-red-100 text-red-700 rounded-lg p-4 mb-4",
-  errorContainer: "bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mt-4",
-  successContainer: "bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mt-4",
+  alertSuccess: "bg-green-50 border border-green-100 text-green-700 rounded-full p-4 mb-4",
+  alertError: "bg-red-50 border border-red-100 text-red-700 rounded-full p-4 mb-4",
+  errorContainer: "bg-red-50 border border-red-100 text-red-700 p-4 rounded-full mt-4",
+  successContainer: "bg-green-50 border border-green-100 text-green-700 p-4 rounded-full mt-4",
   
   // Select et dropdown
-  select: "w-full pl-10 bg-white border-gray-200 text-gray-900 rounded-lg shadow-sm transition-all duration-200 focus:ring-2 focus:ring-gray-200 focus:border-gray-500 hover:border-gray-300",
-  selectTrigger: "w-full justify-between bg-white border-gray-200 hover:border-gray-400 text-gray-900 rounded-lg shadow-sm transition-all duration-200",
-  selectContent: "bg-white border-gray-100 rounded-lg shadow-md overflow-hidden",
+  select: "w-full pl-10 bg-white border-gray-200 text-gray-900 rounded-full transition-all duration-200 focus:ring-2 focus:ring-gray-200 focus:border-gray-500 hover:border-gray-300",
+  selectTrigger: "w-full justify-between bg-white border-gray-200 hover:border-gray-400 text-gray-900 rounded-full transition-all duration-200",
+  selectContent: "bg-white border border-gray-100 rounded-xl overflow-hidden",
   selectItem: "text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer",
   
   // Popover
-  popoverTrigger: "w-full justify-between bg-white border-gray-200 hover:border-gray-400 text-gray-900 rounded-lg shadow-sm transition-all duration-200",
-  popoverContent: "bg-white border border-gray-100 rounded-lg shadow-md p-0",
+  popoverTrigger: "w-full justify-between bg-white border-gray-200 hover:border-gray-400 text-gray-900 rounded-full transition-all duration-200",
+  popoverContent: "bg-white border border-gray-100 rounded-xl p-0",
   
   // Command
-  commandInput: "border-gray-200 focus:border-gray-400 focus:ring-gray-200",
+  commandInput: "border-gray-200 focus:border-gray-400 focus:ring-gray-200 rounded-full",
   commandEmpty: "py-6 text-center text-sm text-gray-500",
   commandItem: "text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer",
   

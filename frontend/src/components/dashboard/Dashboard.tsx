@@ -6,7 +6,8 @@ import VaccinationRatio from "@/components/dashboard/VaccinationRatio";
 import VaccineCoverage from "@/components/dashboard/VaccineCoverage";
 import VaccinationTrend from "@/components/dashboard/VaccinationTrend";
 import GenderAgeChart from "@/components/dashboard/GenderAgeChart";
-import VaccinationPercentage from "@/components/dashboard/VaccinationPercentage"; // Nouveau composant
+import VaccinationPercentage from "@/components/dashboard/VaccinationPercentage";
+import MapOverview from "@/components/dashboard/MapOverview"; // Nouvelle carte des fokotany et hameaux
 import { Users, Syringe, UserX } from "lucide-react";
 
 function Dashboard() {
@@ -88,24 +89,29 @@ function Dashboard() {
 
         {/* Graphiques */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Carte des Fokotany et Hameaux - En haut sur toute la largeur */}
+          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl border border-gray-100">
+            <MapOverview />
+          </div>
+
           {/* Première ligne : Deux graphiques côte à côte */}
-          <div className="bg-white p-6 rounded-xl ">
+          <div className="bg-white p-6 rounded-xl border border-gray-100">
             <VaccinationPercentage />
           </div>
-          <div className="bg-white p-6 rounded-xl ">
+          <div className="bg-white p-6 rounded-xl border border-gray-100">
             <VaccineCoverage />
           </div>
 
           {/* Deuxième ligne : Grand graphique VaccinationRatio */}
-          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl ">
+          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl border border-gray-100">
             <VaccinationRatio />
           </div>
 
-          {/* Autres graphiques (optionnels) */}
-          <div className="bg-white p-6 rounded-xl ">
+          {/* Autres graphiques */}
+          <div className="bg-white p-6 rounded-xl border border-gray-100">
             <VaccinationTrend />
           </div>
-          <div className="bg-white p-6 rounded-xl ">
+          <div className="bg-white p-6 rounded-xl border border-gray-100">
             <GenderAgeChart />
           </div>
         </div>
