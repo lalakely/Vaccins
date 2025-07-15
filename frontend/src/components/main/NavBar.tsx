@@ -63,7 +63,7 @@ function NavBar() {
   return (
     <>
       {/* Menu utilisateur en haut à droite avec animation */}
-      <div className="fixed top-4 right-6 z-50 flex items-center gap-3">
+      <div className="fixed top-4 right-6 z-[var(--z-index-navbar)] flex items-center gap-3">
         <NotificationButton />
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -80,7 +80,7 @@ function NavBar() {
 
         {/* Dropdown déconnexion avec animation */}
         <div
-          className={`absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg border border-gray-100 transition-all duration-300 ease-in-out transform ${
+          className={`absolute right-0 mt-2 w-48 bg-white rounded-lg border border-gray-100 transition-all duration-300 ease-in-out transform z-[var(--z-index-navbar)] ${
             isDropdownOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"
           }`}
         >
@@ -101,7 +101,7 @@ function NavBar() {
       {/* Bouton d'ouverture du Navbar */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className={`hidden lg:block fixed top-6 z-50 bg-white border border-gray-100 text-gray-700 p-2.5 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300
+        className={`hidden lg:block fixed top-6 z-[var(--z-index-navbar)] bg-white border border-gray-100 text-gray-700 p-2.5 rounded-full hover:bg-gray-50 transition-all duration-300
         ${isSidebarOpen ? "left-[275px]" : "left-[15px]"}`}
       >
         {isSidebarOpen ? 
@@ -112,7 +112,7 @@ function NavBar() {
 
       {/* Sidebar Desktop */}
       <div
-        className={`hidden lg:flex fixed top-0 left-0 h-full bg-white w-64 flex-col text-muted-foreground  transition-transform duration-300 ${
+        className={`hidden lg:flex fixed top-0 left-0 h-full bg-white w-64 flex-col text-muted-foreground z-[var(--z-index-content)] transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-64"
         }`}
       >
@@ -135,7 +135,7 @@ function NavBar() {
       </div>
 
       {/* Navbar responsive en version mobile */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white  flex justify-around py-1 border-t border-gray-100">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white flex justify-around py-1 border-t border-gray-100 z-[var(--z-index-navbar)]">
         <MobileNavItem to="/dashboard" icon={<FaChartBar size={20} />} label="Dashboard" active={location.pathname === "/dashboard"} />
         <MobileNavItem to="/Personnes" icon={<FaUsers size={20} />} label="Personnes" active={location.pathname === "/Personnes"} />
         <MobileNavItem to="/historique-enfants" icon={<FaHistory size={20} />} label="Historique" active={location.pathname === "/historique-enfants"} />

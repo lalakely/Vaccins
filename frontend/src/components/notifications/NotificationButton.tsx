@@ -66,7 +66,7 @@ const NotificationButton: React.FC = () => {
       {isOpen && (
         <div 
           ref={notificationPanelRef}
-          className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-100 z-50 max-h-[80vh] overflow-y-auto"
+          className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-lg border border-gray-100 z-[var(--z-index-notifications)] max-h-[80vh] overflow-y-auto"
         >
           <NotificationCenter onClose={() => setIsOpen(false)} />
         </div>

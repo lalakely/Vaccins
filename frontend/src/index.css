@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Système de z-index hiérarchique pour assurer un bon ordre d'affichage */
+:root {
+  --z-index-base: 1;
+  --z-index-content: 10;
+  --z-index-map: 20;
+  --z-index-popups: 30;
+  --z-index-navbar: 100;
+  --z-index-notifications: 110;
+}
+
+/* Correction des z-index pour les éléments Leaflet */
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-tooltip,
+.leaflet-popup,
+.leaflet-control,
+.leaflet-zoom-box {
+  z-index: var(--z-index-map) !important;
+}
+
+/* Ajustement spécifique pour chaque couche de Leaflet */
+.leaflet-map-pane { z-index: var(--z-index-map) !important; }
+.leaflet-tile-pane { z-index: calc(var(--z-index-map) + 1) !important; }
+.leaflet-overlay-pane { z-index: calc(var(--z-index-map) + 2) !important; }
+.leaflet-shadow-pane { z-index: calc(var(--z-index-map) + 3) !important; }
+.leaflet-marker-pane { z-index: calc(var(--z-index-map) + 4) !important; }
+.leaflet-tooltip-pane { z-index: calc(var(--z-index-map) + 5) !important; }
+.leaflet-popup-pane { z-index: calc(var(--z-index-map) + 6) !important; }
+.leaflet-control { z-index: calc(var(--z-index-map) + 7) !important; }
+.leaflet-zoom-box { z-index: calc(var(--z-index-map) + 8) !important; }
+
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
