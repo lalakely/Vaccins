@@ -49,8 +49,8 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 w-[100%]">
+      <div className="max-w-6xl mx-auto">
         {/* En-tête */}
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
@@ -62,7 +62,7 @@ function Dashboard() {
         </header>
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 w-full">
           <KPICard
             title="Total Enfants"
             value={kpis.totalEnfants.toLocaleString()}
@@ -89,23 +89,23 @@ function Dashboard() {
         {/* Graphiques */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Première ligne : Deux graphiques côte à côte */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white p-6 rounded-xl ">
             <VaccinationPercentage />
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white p-6 rounded-xl ">
             <VaccineCoverage />
           </div>
 
           {/* Deuxième ligne : Grand graphique VaccinationRatio */}
-          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-xl ">
             <VaccinationRatio />
           </div>
 
           {/* Autres graphiques (optionnels) */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white p-6 rounded-xl ">
             <VaccinationTrend />
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white p-6 rounded-xl ">
             <GenderAgeChart />
           </div>
         </div>

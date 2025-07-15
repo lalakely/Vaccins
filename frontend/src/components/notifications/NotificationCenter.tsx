@@ -1,5 +1,5 @@
 import React from 'react';
-import { BellIcon, BellAlertIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { BellIcon, CheckIcon, TrashIcon, BeakerIcon, MapPinIcon, MapIcon } from '@heroicons/react/24/solid';
 import { useNotification, Notification as NotificationType } from '../../contexts/NotificationContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -19,11 +19,22 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
   // Fonction pour obtenir l'icône en fonction de la catégorie
   const getCategoryIcon = (category: string) => {
+    // Déterminer la catégorie principale de la notification
+    if (category === 'vaccination_alert' || category.includes('vaccin')) {
+      // Vaccins en retard - icône de vaccin rouge
+      return <BeakerIcon className="h-5 w-5 text-red-500" />;
+    } else if (category.includes('fokotany') || (category === 'statistics' && category.toLowerCase().includes('fokotany'))) {
+      // Fokotany avec couverture vaccinale faible - icône de localisation
+      return <MapPinIcon className="h-5 w-5 text-blue-600" />;
+    } else if (category.includes('hameau') || (category === 'statistics' && category.toLowerCase().includes('hameau'))) {
+      // Hameaux - icône de carte
+      return <MapIcon className="h-5 w-5 text-green-600" />;
+    }
+    
+    // Catégories standard
     switch (category) {
       case 'action_feedback':
         return <CheckIcon className="h-5 w-5" />;
-      case 'vaccination_alert':
-        return <BellAlertIcon className="h-5 w-5" />;
       case 'statistics':
         return <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />

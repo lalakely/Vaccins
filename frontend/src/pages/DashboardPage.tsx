@@ -6,7 +6,7 @@ function DashboardPage() {
   return (
     <div className="min-h-screen ">
       <NavBar />
-      <div className="lg:ml-64 ">
+      <div className="lg:ml-30 w-[100%]">
         <Dashboard />
       </div>
     </div>

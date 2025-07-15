@@ -587,6 +587,7 @@ exports.checkAllRappelsAdministered = async (req, res) => {
 // Récupérer tous les enfants avec des vaccins en retard
 exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
     try {
+        console.log('Début getAllChildrenWithOverdueVaccines');
         // Récupérer tous les enfants avec leur âge en jours
         const [enfants] = await db.query(`
             SELECT 
@@ -599,66 +600,99 @@ exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
                 e.Hameau,
                 DATEDIFF(CURRENT_DATE, e.date_naissance) as age_in_days
             FROM Enfants e
+            LIMIT 10 -- Limitation pour éviter de surcharger la base de données
         `);
+        
+        console.log(`Récupéré ${enfants.length} enfants`);
 
         // Tableau pour stocker les enfants avec leurs vaccins en retard
         const childrenWithOverdueVaccines = [];
 
         // Pour chaque enfant, vérifier s'il a des vaccins en retard
         for (const enfant of enfants) {
-            // Récupérer les vaccins administrés à cet enfant
-            const [administeredVaccines] = await db.query(`
-                SELECT vaccin_id 
-                FROM Vaccinations 
-                WHERE enfant_id = ?
-            `, [enfant.id]);
+            console.log(`Traitement de l'enfant ${enfant.id} - ${enfant.Prenom} ${enfant.Nom}`);
+            try {
+                // Récupérer les vaccins administrés à cet enfant
+                const [administeredVaccines] = await db.query(`
+                    SELECT vaccin_id 
+                    FROM Vaccinations 
+                    WHERE enfant_id = ?
+                `, [enfant.id]);
+                
+                const administeredVaccineIds = administeredVaccines.map(v => v.vaccin_id);
+                console.log(`Vaccins administrés: ${JSON.stringify(administeredVaccineIds)}`);
             
-            const administeredVaccineIds = administeredVaccines.map(v => v.vaccin_id);
+                // Récupérer les vaccins qui auraient déjà dû être administrés selon l'âge de l'enfant
+                let overdueVaccines = [];
+                try {
+                    const query = `
+                        SELECT v.id, v.Nom as name, v.Description, v.Duree as age_recommande,
+                               DATEDIFF(CURRENT_DATE, DATE_ADD(?, INTERVAL v.Duree DAY)) as days_overdue
+                        FROM Vaccins v
+                        WHERE v.Duree < ?
+                        AND v.id NOT IN (${administeredVaccineIds.length > 0 ? '?' : 'SELECT 0'})
+                    `;
+                    console.log('Requête overdueVaccines:', query);
+                    const params = administeredVaccineIds.length > 0 ? 
+                        [enfant.date_naissance, enfant.age_in_days, administeredVaccineIds] : 
+                        [enfant.date_naissance, enfant.age_in_days];
+                    console.log('Paramètres:', JSON.stringify(params));
+                    [overdueVaccines] = await db.query(query, params);
+                    console.log(`${overdueVaccines.length} vaccins en retard trouvés`);
+                } catch (error) {
+                    console.error('Erreur lors de la requête overdueVaccines:', error);
+                    overdueVaccines = [];
+                }
             
-            // Récupérer les vaccins qui auraient déjà dû être administrés selon l'âge de l'enfant
-            const [overdueVaccines] = await db.query(`
-                SELECT v.id, v.Nom as name, v.Description, v.Duree as age_recommande,
-                       DATEDIFF(CURRENT_DATE, DATE_ADD(?, INTERVAL v.Duree DAY)) as days_overdue
-                FROM Vaccins v
-                WHERE v.Duree < ?
-                AND v.id NOT IN (${administeredVaccineIds.length > 0 ? '?' : 'SELECT 0'})
-            `, administeredVaccineIds.length > 0 ? 
-                [enfant.date_naissance, enfant.age_in_days, administeredVaccineIds] : 
-                [enfant.date_naissance, enfant.age_in_days]);
-            
-            // Également vérifier les rappels en retard
-            const [overdueRappels] = await db.query(`
-                SELECT 
-                    v.id, 
-                    v.Nom as name, 
-                    v.Description,
-                    vs.delai as delai_rappel,
-                    vac.date_vaccination as date_vaccination_parent,
-                    DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY) as date_due,
-                    DATEDIFF(CURRENT_DATE, DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY)) as days_overdue
-                FROM 
-                    VaccinSuite vs
-                JOIN Vaccins v ON vs.suite_id = v.id
-                JOIN Vaccinations vac ON vs.vaccin_id = vac.vaccin_id AND vac.enfant_id = ?
-                WHERE 
-                    vs.type = 'rappel' AND
-                    DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY) < CURRENT_DATE AND
-                    vs.suite_id NOT IN (SELECT vaccin_id FROM Vaccinations WHERE enfant_id = ?)
-            `, [enfant.id, enfant.id]);
+                // Également vérifier les rappels en retard (les suites avec un délai)
+                let overdueRappels = [];
+                try {
+                    const rappelsQuery = `
+                        SELECT 
+                            v.id, 
+                            v.Nom as name, 
+                            v.Description,
+                            vs.delai as delai_rappel,
+                            vac.date_vaccination as date_vaccination_parent,
+                            DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY) as date_due,
+                            DATEDIFF(CURRENT_DATE, DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY)) as days_overdue
+                        FROM 
+                            VaccinSuite vs
+                        JOIN Vaccins v ON vs.suite_id = v.id
+                        JOIN Vaccinations vac ON vs.vaccin_id = vac.vaccin_id AND vac.enfant_id = ?
+                        WHERE 
+                            vs.delai > 0 AND
+                            DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY) < CURRENT_DATE AND
+                            vs.suite_id NOT IN (SELECT vaccin_id FROM Vaccinations WHERE enfant_id = ?)
+                    `;
+                    console.log('Requête overdueRappels:', rappelsQuery);
+                    [overdueRappels] = await db.query(rappelsQuery, [enfant.id, enfant.id]);
+                    console.log(`${overdueRappels.length} rappels en retard trouvés`);
+                } catch (error) {
+                    console.error('Erreur lors de la requête overdueRappels:', error);
+                    overdueRappels = [];
+                }
 
-            // Si l'enfant a des vaccins en retard, l'ajouter à la liste
-            const allOverdue = [...overdueVaccines, ...overdueRappels];
-            if (allOverdue.length > 0) {
-                childrenWithOverdueVaccines.push({
-                    enfant: enfant,
-                    overdue_vaccines: allOverdue
-                });
+                // Si l'enfant a des vaccins en retard, l'ajouter à la liste
+                const allOverdue = [...overdueVaccines, ...overdueRappels];
+                console.log(`Total de vaccins en retard pour cet enfant: ${allOverdue.length}`);
+                if (allOverdue.length > 0) {
+                    childrenWithOverdueVaccines.push({
+                        enfant: enfant,
+                        overdue_vaccines: allOverdue
+                    });
+                }
+            } catch (enfantError) {
+                console.error(`Erreur lors du traitement de l'enfant ${enfant.id}:`, enfantError);
             }
         }
 
+        console.log(`Nombre total d'enfants avec vaccins en retard: ${childrenWithOverdueVaccines.length}`);
         res.json(childrenWithOverdueVaccines);
     } catch (err) {
         console.error('Error fetching children with overdue vaccines:', err);
+        // Afficher plus de détails sur l'erreur
+        console.error(err.stack);
         res.status(500).json({ message: 'Erreur interne du serveur' });
     }
 };

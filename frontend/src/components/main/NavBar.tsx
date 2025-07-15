@@ -67,7 +67,7 @@ function NavBar() {
         <NotificationButton />
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl border border-gray-100 transition-all duration-300 group"
+          className="flex items-center gap-2 bg-white px-4 py-2 rounded-full  hover:shadow-xl border border-gray-100 transition-all duration-300 group"
         >
           <div className="bg-primary text-white p-1.5 rounded-full group-hover:bg-primary/90 transition-all">
             <FaRegUser size={14} />
@@ -112,12 +112,12 @@ function NavBar() {
 
       {/* Sidebar Desktop */}
       <div
-        className={`hidden lg:flex fixed top-0 left-0 h-full bg-white w-64 flex-col text-muted-foreground shadow-xl transition-transform duration-300 ${
+        className={`hidden lg:flex fixed top-0 left-0 h-full bg-white w-64 flex-col text-muted-foreground  transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-64"
         }`}
       >
         {/* En-tête de la sidebar */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 ">
           <h1 className="text-xl font-bold text-primary flex items-center gap-2">
             <FaSyringe className="rotate-45" />
             <span>CSB Vaccins</span>
@@ -135,7 +135,7 @@ function NavBar() {
       </div>
 
       {/* Navbar responsive en version mobile */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white shadow-xl flex justify-around py-1 border-t border-gray-100">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white  flex justify-around py-1 border-t border-gray-100">
         <MobileNavItem to="/dashboard" icon={<FaChartBar size={20} />} label="Dashboard" active={location.pathname === "/dashboard"} />
         <MobileNavItem to="/Personnes" icon={<FaUsers size={20} />} label="Personnes" active={location.pathname === "/Personnes"} />
         <MobileNavItem to="/historique-enfants" icon={<FaHistory size={20} />} label="Historique" active={location.pathname === "/historique-enfants"} />

@@ -226,9 +226,10 @@ export default function ChildList() {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 20px;
+              border: 2px solid #333;
             }
             th, td {
-              border: 1px solid #ddd;
+              border: 1px solid #333;
               padding: 8px 12px;
               text-align: left;
             }
@@ -312,7 +313,7 @@ export default function ChildList() {
   return (
     <div className="p-6 flex flex-col items-center pt-[70px] overflow-y-auto w-full relative transition-all duration-300">
       {loading ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-xl p-6 text-center shadow-lg mx-auto bg-white rounded-lg">
+        <Card className="flex flex-col items-center justify-center w-full max-w-xl p-6 text-center mx-auto bg-white rounded-lg">
           <CardHeader>
             <Loader2 className="w-12 h-12 text-gray-500 animate-spin mx-auto" />
           </CardHeader>
@@ -324,7 +325,7 @@ export default function ChildList() {
           </CardContent>
         </Card>
       ) : data.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-xl p-6 text-center shadow-lg mx-auto bg-white rounded-lg">
+        <Card className="flex flex-col items-center justify-center w-full max-w-xl p-6 text-center mx-auto bg-white rounded-lg">
           <CardHeader>
             <AlertCircle className="w-12 h-12 text-gray-500 mx-auto" />
           </CardHeader>
@@ -339,69 +340,81 @@ export default function ChildList() {
         </Card>
       ) : (
         <>
-          <div className="flex justify-between items-center w-full max-w-4xl mb-4">
+          <div className="flex justify-between items-center w-full max-w-6xl mb-4 mx-auto">
             <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
               <Users className="text-primary" size={20} />
-              Liste des enfants <span className="text-sm font-normal text-gray-500 ml-2">({filteredData.length} résultats)</span>
+              Liste des personnes <span className="text-sm font-normal text-gray-500 ml-2">({filteredData.length} résultats)</span>
             </h2>
             <Button
               variant="outline"
               onClick={handlePrint}
-              className="flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-primary border border-primary/30 hover:border-primary transition-colors shadow-sm"
+              className="flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-primary border border-primary/30 hover:border-primary transition-colors"
             >
               <Printer size={16} />
               Imprimer la liste
             </Button>
           </div>
           
-          <div ref={printContentRef}>
-            <Card className="overflow-hidden shadow-xl rounded-lg border border-gray-200 w-full max-w-4xl mx-auto bg-white hover:shadow-2xl transition-shadow duration-300">
-              <div className="p-2 bg-gradient-to-r from-primary/5 to-transparent">
-                <div className="text-xs text-gray-500 px-2">Cliquez sur une ligne pour voir les détails</div>
-              </div>
-              <div className="overflow-x-auto">
-                <Table className="w-full text-base">
-                <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-primary/20 to-primary/5 text-gray-800">
-                    <TableHead className="font-semibold p-3 text-center">
-                      <Users className="inline-block mr-2 w-5 h-5 text-primary" />{" "}
-                      Nom
-                    </TableHead>
-                    <TableHead className="font-semibold p-3 text-center">
-                      <UserPlus className="inline-block mr-2 w-5 h-5 text-primary" />{" "}
-                      Prénom
-                    </TableHead>
-                    <TableHead className="font-semibold p-3 text-center">
-                      <Calendar className="inline-block mr-2 w-5 h-5 text-primary" />{" "}
-                      Date de Naissance
-                    </TableHead>
-                    <TableHead className="font-semibold p-3 text-center">
-                      <Home className="inline-block mr-2 w-5 h-5 text-primary" />{" "}
-                      Domicile
-                    </TableHead>
-                    <TableHead className="font-semibold p-3 text-center">
-                      <Info className="inline-block mr-2 w-5 h-5 text-primary" />{" "}
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentItems.map((enfant: any, index: number) => (
-                    <ChildRow
-                      key={enfant.id}
-                      enfant={enfant}
-                      isEven={index % 2 === 0}
-                      onDetailsClick={handleDetailsClick}
-                    />
-                  ))}
-                </TableBody>
-                </Table>
-              </div>
-            </Card>
+          <div className="mb-8 w-full">
+            <div className="overflow-hidden w-full max-w-6xl mx-auto">
+              <CardHeader className="bg-white pb-3">
+                <div className="text-sm text-gray-500">Cliquez sur une ligne pour voir les détails</div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto w-full">
+                  <Table className="w-full min-w-[800px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-primary" />
+                            Nom
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" />
+                            Prénom
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            Date de Naissance
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Home className="h-4 w-4 text-primary" />
+                            Domicile
+                          </div>
+                        </TableHead>
+                        <TableHead className="font-semibold whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Info className="h-4 w-4 text-primary" />
+                            Actions
+                          </div>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentItems.map((enfant: any, index: number) => (
+                        <ChildRow
+                          key={enfant.id}
+                          enfant={enfant}
+                          isEven={index % 2 === 0}
+                          onDetailsClick={handleDetailsClick}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </div>
           </div>
 
           {/* Pagination */}
-          <div className="flex justify-center items-center gap-4 mt-6 mb-4 bg-white p-3 rounded-lg shadow-sm border border-gray-100 max-w-md mx-auto">
+          <div className="flex justify-center items-center gap-4 mt-6 mb-4 bg-white p-3 rounded-lg max-w-md mx-auto">
             <Button
               variant="outline"
               onClick={() => setCurrentPage(currentPage - 1)}

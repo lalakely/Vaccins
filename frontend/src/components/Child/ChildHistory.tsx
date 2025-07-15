@@ -268,7 +268,7 @@ export default function ChildHistory() {
 
   return (
     <div className="p-4">
-      <Card>
+      <div>
         <CardHeader className="flex justify-between items-center">
           <CardTitle className="text-xl font-bold">Historique des modifications</CardTitle>
           {error && (
@@ -376,7 +376,7 @@ export default function ChildHistory() {
             </>
           )}
         </CardContent>
-      </Card>
+      </div>
 
       {/* Modal de détails */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>

@@ -62,7 +62,7 @@ export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowPro
             onClick={() => onDetailsClick(enfant)}
             style={{ cursor: 'pointer' }}
         >
-            <TableCell className="py-3 px-4 text-left">
+            <TableCell className="py-3 px-4 text-left w-[22%]">
                 <div className="flex items-center gap-2">
                     <div className="bg-primary/10 rounded-full p-1.5">
                         <User size={16} className="text-primary" />
@@ -79,7 +79,7 @@ export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowPro
                 </div>
             </TableCell>
             
-            <TableCell className="py-3 px-4 text-gray-700 text-left">
+            <TableCell className="py-3 px-4 text-gray-700 text-left w-[18%]">
                 <div className="font-medium">{enfant.Prenom || 'N/A'}</div>
                 <div className="text-xs text-gray-500 mt-1">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full border ${getSexeClass()}`}>
@@ -88,7 +88,7 @@ export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowPro
                 </div>
             </TableCell>
             
-            <TableCell className="py-3 px-4 text-gray-700 text-left">
+            <TableCell className="py-3 px-4 text-gray-700 text-left w-[20%]">
                 <div className="flex items-start gap-2">
                     <Calendar size={16} className="text-primary mt-0.5" />
                     <div>
@@ -100,7 +100,7 @@ export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowPro
                 </div>
             </TableCell>
             
-            <TableCell className="py-3 px-4 text-gray-700 text-left">
+            <TableCell className="py-3 px-4 text-gray-700 text-left w-[30%]">
                 <div className="flex items-start gap-2">
                     <MapPin size={16} className="text-primary mt-0.5" />
                     <div>
@@ -114,7 +114,7 @@ export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowPro
                 </div>
             </TableCell>
             
-            <TableCell className="py-3 px-4 text-right w-[120px]">
+            <TableCell className="py-3 px-4 text-right w-[10%]">
                 <Button 
                     variant="ghost" 
                     onClick={(e) => {

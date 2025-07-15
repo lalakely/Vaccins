@@ -96,7 +96,7 @@ export default function ChildFilters({
       <Button
         variant="outline"
         onClick={() => setIsFilterOpen(!isFilterOpen)}
-        className={`fixed top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-2 rounded-full shadow-md hover:bg-gray-200 transition-all z-50 ${
+        className={`fixed top-1/2 transform -translate-y-1/2 bg-white border border-gray-300 text-gray-700 p-2 rounded-full hover:bg-gray-200 transition-all z-50 ${
           isFilterOpen ? "right-[360px]" : "right-[15px]"
         }`}
       >
@@ -106,7 +106,7 @@ export default function ChildFilters({
       {/* Tiroir des filtres (style cohérent avec la sidebar) */}
       <div
         className={`${isFilterOpen ? "w-[350px]" : "w-0"} 
-          h-full bg-white shadow-lg transform transition-all duration-300 fixed top-0 right-0 z-30 pt-14
+          h-full bg-white transform transition-all duration-300 fixed top-0 right-0 z-30 pt-14
           border-l border-gray-200 flex flex-col`}
       >
         <div className="p-4 bg-white border-b sticky top-0 z-10">
@@ -125,7 +125,7 @@ export default function ChildFilters({
                 placeholder="Nom"
                 value={filters.Nom}
                 onChange={(e) => setFilters({ ...filters, Nom: e.target.value })}
-                className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+                className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
               />
               </div>
 
@@ -137,7 +137,7 @@ export default function ChildFilters({
                 placeholder="Prénom"
                 value={filters.Prenom}
                 onChange={(e) => setFilters({ ...filters, Prenom: e.target.value })}
-                className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+                className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
               />
             </div>
 
@@ -149,7 +149,7 @@ export default function ChildFilters({
               placeholder="CODE"
               value={filters.CODE}
               onChange={(e) => setFilters({ ...filters, CODE: e.target.value })}
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -162,7 +162,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, date_naissance: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -172,7 +172,7 @@ export default function ChildFilters({
             <select
               value={filters.SEXE}
               onChange={(e) => setFilters({ ...filters, SEXE: e.target.value })}
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all w-full p-2"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all w-full p-2"
             >
               <option value="">Sélectionner</option>
               <option value="M">Masculin</option>
@@ -190,7 +190,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, NomMere: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -204,7 +204,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, NomPere: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -218,7 +218,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, Domicile: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -232,7 +232,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, Fokotany: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -246,7 +246,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, Hameau: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -260,7 +260,7 @@ export default function ChildFilters({
               onChange={(e) =>
                 setFilters({ ...filters, Telephone: e.target.value })
               }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -272,14 +272,14 @@ export default function ChildFilters({
               placeholder="Âge Min"
               value={filters.age_min}
               onChange={(e) => {
-                const age_min = e.target.value;
+                const age_min = parseInt(e.target.value) || 0;
                 setFilters({
                   ...filters,
-                  age_min,
-                  age_max: Math.max(filters.age_max || 0, age_min),
+                  age_min: age_min.toString(),
+                  age_max: Math.max(parseInt(filters.age_max) || 0, age_min).toString(),
                 });
               }}
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -290,13 +290,15 @@ export default function ChildFilters({
               type="number"
               placeholder="Âge Max"
               value={filters.age_max}
-              onChange={(e) =>
+              onChange={(e) => {
+                const age_max = parseInt(e.target.value) || 0;
+                const age_min = parseInt(filters.age_min) || 0;
                 setFilters({
                   ...filters,
-                  age_max: Math.max(e.target.value || 0, filters.age_min || 0),
-                })
-              }
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
+                  age_max: Math.max(age_max, age_min).toString(),
+                });
+              }}
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all"
             />
             </div>
 
@@ -306,7 +308,7 @@ export default function ChildFilters({
             <select
               value={filters.vaccin_id}
               onChange={(e) => setFilters({ ...filters, vaccin_id: e.target.value, show_not_vaccinated: false })}
-              className="bg-white text-gray-600 border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all w-full p-2"
+              className="bg-white text-gray-600 border border-gray-300 rounded-lg hover:border-gray-400 focus:ring-2 focus:ring-primary transition-all w-full p-2"
             >
               <option value="">Sélectionner un vaccin</option>
               {vaccins.map((vaccin) => (
@@ -384,7 +386,7 @@ export default function ChildFilters({
           <Button
             variant="outline"
             onClick={resetFilters}
-            className="mt-4 bg-white text-gray-600 border border-gray-300 rounded-lg shadow-md hover:bg-gray-100 transition-all"
+            className="mt-4 bg-white text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition-all"
           >
             Réinitialiser les filtres
           </Button>

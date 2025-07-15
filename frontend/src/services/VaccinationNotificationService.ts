@@ -40,11 +40,16 @@ class VaccinationNotificationService {
    * @returns Promise avec la liste des enfants et leurs vaccins en retard
    */
   async getChildrenWithOverdueVaccines(): Promise<ChildWithOverdueVaccines[]> {
+    console.log('Début de la récupération des enfants avec vaccins en retard');
+    console.log('Token disponible:', !!this.token);
+    console.log('URL API:', `${this.apiUrl}/children-with-overdue-vaccines`);
+    
     try {
       // Utiliser un AbortController pour gérer le timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
 
+      console.log('Envoi de la requête API...');
       const response = await axios.get(`${this.apiUrl}/children-with-overdue-vaccines`, {
         headers: this.token ? { Authorization: `Bearer ${this.token}` } : {},
         signal: controller.signal,
@@ -52,6 +57,10 @@ class VaccinationNotificationService {
       });
 
       clearTimeout(timeoutId);
+      console.log('Réponse API reçue:', response.status);
+      console.log('Données reçues:', response.data);
+      console.log(`Nombre d'enfants avec vaccins en retard: ${(response.data || []).length}`);
+      
       return response.data || [];
     } catch (error: any) {
       console.error('Erreur lors de la récupération des enfants avec vaccins en retard:', error);
@@ -60,6 +69,7 @@ class VaccinationNotificationService {
         console.warn("Timeout lors de la récupération des enfants avec vaccins en retard");
       } else if (error.response) {
         console.warn(`Erreur ${error.response.status} lors de la récupération des enfants avec vaccins en retard`);
+        console.warn('Détail de l\'erreur:', error.response.data);
       }
       
       return [];
