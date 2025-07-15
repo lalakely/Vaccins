@@ -154,10 +154,10 @@ function NavItem({ to, icon, label, active }: { to: string; icon: JSX.Element; l
   return (
     <Link
       to={to}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+      className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
         active 
-          ? "bg-primary/10 text-primary font-semibold border-l-4 border-primary" 
-          : "text-gray-600 hover:bg-gray-50 hover:text-primary"
+          ? "bg-primary/10 text-primary font-semibold rounded-full" 
+          : "text-gray-600 hover:bg-gray-50 hover:text-primary hover:rounded-full"
       }`}
     >
       <div className={`${active ? "text-primary" : "text-gray-500"}`}>{icon}</div>
@@ -173,10 +173,10 @@ function MobileNavItem({ to, icon, label, active }: { to: string; icon: JSX.Elem
   return (
     <Link
       to={to}
-      className="flex flex-col items-center justify-center py-2 px-1 w-full transition-all"
+      className={`flex flex-col items-center justify-center py-2 px-1 w-full transition-all ${active ? "" : "hover:bg-gray-50"}`}
     >
       <div 
-        className={`p-1.5 rounded-full mb-1 ${active ? "text-primary bg-primary/10" : "text-gray-500"}`}
+        className={`p-2 mb-1 transition-all duration-200 ${active ? "text-primary bg-primary/10 rounded-full" : "text-gray-500 hover:bg-primary/5 hover:rounded-full"}`}
       >
         {icon}
       </div>

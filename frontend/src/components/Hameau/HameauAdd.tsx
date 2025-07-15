@@ -202,8 +202,8 @@ export default function HameauAdd() {
 
             <Dialog onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button className={formStyles.primaryButton}>
-                        Ajouter un hameau <CiCirclePlus className="text-xl" />
+                    <Button className={`${formStyles.primaryButton} px-6 max-w-xs rounded-full`}>
+                        Ajouter un hameau <CiCirclePlus className="text-xl ml-1" />
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl border border-gray-200" aria-describedby="hameau-dialog-description">
@@ -314,6 +314,8 @@ export default function HameauAdd() {
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            <div className="w-full border-t border-gray-200 my-6"></div>
         </div>
     );
 }

@@ -93,7 +93,7 @@ export default function AddChild() {
 
             <Dialog>
                 <DialogTrigger asChild>
-                    <Button className={formStyles.primaryButton + " px-6 max-w-xs"}>
+                    <Button className={`${formStyles.primaryButton} px-6 max-w-xs rounded-full`}>
                         Ajouter une personne <CiCirclePlus className="text-xl ml-1" />
                     </Button>
                 </DialogTrigger>
@@ -344,6 +344,8 @@ export default function AddChild() {
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            <div className="w-full border-t border-gray-200 my-6"></div>
         </div>
     );
 }

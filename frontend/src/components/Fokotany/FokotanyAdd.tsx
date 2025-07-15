@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { CiCirclePlus } from "react-icons/ci";
-import { FaMapMarkerAlt, FaBuilding } from "react-icons/fa";
+import { FaHome, FaMapMarkerAlt } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { formStyles } from "@/components/ui/form-styles";
+import { useToast } from "@/hooks/use-toast";
 import L from "leaflet";
 import type { Map as LeafletMap, LeafletMouseEvent } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { formStyles } from "@/components/ui/form-styles";
-import { useToast } from "@/hooks/use-toast";
 
 // Fix pour les icônes Leaflet dans React
 L.Icon.Default.mergeOptions({
@@ -23,7 +23,7 @@ export default function FokotanyAdd() {
     const [formData, setFormData] = useState({
         Nom: '',
         px: '',
-        py: '',
+        py: ''
     });
     
     const [loading, setLoading] = useState(false);
@@ -99,18 +99,7 @@ export default function FokotanyAdd() {
         }
     }, [isDialogOpen, mapInitialized, mapCenter, mapZoom]);
     
-    // Réajustement de la taille de la carte quand le dialogue est ouvert
-    useEffect(() => {
-        if (isDialogOpen && mapRef.current) {
-            // Petit délai pour s'assurer que le DOM est pleinement rendu
-            const timer = setTimeout(() => {
-                mapRef.current?.invalidateSize();
-            }, 200);
-            return () => clearTimeout(timer);
-        }
-    }, [isDialogOpen]);
-    
-    // Nettoyage de la carte Leaflet lors du démontage du composant
+    // Effet de nettoyage pour détruire la carte lorsque le composant est démonté
     useEffect(() => {
         return () => {
             if (mapRef.current) {
@@ -121,13 +110,23 @@ export default function FokotanyAdd() {
             }
         };
     }, []);
+    
+    // Gestion de l'ouverture et fermeture du dialogue
+    useEffect(() => {
+        if (!isDialogOpen) {
+            // Réinitialisation de la carte si le dialogue est fermé
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+                markerRef.current = null;
+                setMapInitialized(false);
+            }
+        }
+    }, [isDialogOpen]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
+        setFormData({ ...formData, [name]: value });
     };
     
     // Réinitialisation du formulaire et fermeture du dialogue
@@ -136,16 +135,15 @@ export default function FokotanyAdd() {
         setPosition(null); // Réinitialise la position du marqueur
         setIsDialogOpen(false);
     };
-    
-    // Gestion de la soumission du formulaire
-    const handleSubmit = async (e: React.FormEvent) => {
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         
         // Validation de base
         if (!formData.Nom.trim()) {
             toast({
                 title: "Erreur de validation",
-                description: "Le nom du Fokotany est requis",
+                description: "Le nom du fokotany est requis",
                 variant: "destructive"
             });
             return;
@@ -161,20 +159,21 @@ export default function FokotanyAdd() {
         }
         
         setLoading(true);
-        
+
         try {
             const response = await fetch('http://localhost:3000/api/fokotany', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
-            
+
             if (response.ok) {
                 toast({
                     title: "Succès",
-                    description: "Le Fokotany a été ajouté avec succès",
+                    description: "Le fokotany a été ajouté avec succès",
                     variant: "default"
                 });
+                
                 // Réinitialisation et fermeture
                 setFormData({ Nom: '', px: '', py: '' });
                 setPosition(null); // Réinitialise la position du marqueur
@@ -184,7 +183,7 @@ export default function FokotanyAdd() {
                 throw new Error(errorData.message || "Une erreur est survenue");
             }
         } catch (error) {
-            console.error("Erreur lors de l'ajout du Fokotany:", error);
+            console.error('Erreur réseau:', error);
             toast({
                 title: "Erreur",
                 description: error instanceof Error ? error.message : "Une erreur inattendue est survenue",
@@ -196,43 +195,50 @@ export default function FokotanyAdd() {
     };
 
     return (
-        <div className="p-4">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="w-full flex flex-col items-center p-4 sm:p-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-gray-800 flex items-center gap-2">
+                <FaHome className="text-gray-600" /> La liste des fokotany
+            </h1>
+
+            <Dialog onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        <CiCirclePlus className="h-5 w-5" />
-                        Ajouter un Fokotany
+                    <Button className={`${formStyles.primaryButton} px-6 max-w-xs rounded-full`}>
+                        Ajouter un fokotany <CiCirclePlus className="text-xl ml-1" />
                     </Button>
                 </DialogTrigger>
                 
                 <DialogContent className="max-w-2xl border border-gray-200" aria-describedby="fokotany-dialog-description">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-                            <FaBuilding /> Ajouter un nouveau Fokotany
+                            <FaHome /> Ajouter un nouveau fokotany
                         </DialogTitle>
                         <DialogDescription id="fokotany-dialog-description">
-                            Remplissez les informations ci-dessous pour ajouter un nouveau Fokotany.
+                            Remplissez les informations ci-dessous pour ajouter un nouveau fokotany.
                         </DialogDescription>
                     </DialogHeader>
-
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 gap-2">
-                                <Label htmlFor="Nom" className={formStyles.label}>
-                                    <FaBuilding className="text-gray-500" /> Nom du Fokotany
+                        <div className="space-y-4">
+                            <div className={formStyles.formGroup}>
+                                <Label className={formStyles.label}>
+                                    <FaHome className="text-gray-500" /> Nom du fokotany
                                 </Label>
-                                <Input
-                                    id="Nom"
-                                    name="Nom"
-                                    placeholder="Entrez le nom du Fokotany"
-                                    value={formData.Nom}
-                                    onChange={handleInputChange}
-                                    className={formStyles.input}
-                                    required
-                                />
+                                <div className={formStyles.inputWrapper}>
+                                    <Input 
+                                        type="text" 
+                                        name="Nom" 
+                                        value={formData.Nom} 
+                                        onChange={handleChange} 
+                                        className={formStyles.input}
+                                        placeholder="Entrez le nom du fokotany"
+                                        required 
+                                    />
+                                    <span className={formStyles.inputIcon}>
+                                        <FaHome />
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <Label htmlFor="px" className={formStyles.label}>
                                         Longitude (px)
@@ -243,7 +249,7 @@ export default function FokotanyAdd() {
                                         type="text"
                                         placeholder="Ex: 47.5079"
                                         value={formData.px}
-                                        onChange={handleInputChange}
+                                        onChange={handleChange}
                                         className={formStyles.input}
                                         required
                                         readOnly
@@ -259,7 +265,7 @@ export default function FokotanyAdd() {
                                         type="text"
                                         placeholder="Ex: -18.8792"
                                         value={formData.py}
-                                        onChange={handleInputChange}
+                                        onChange={handleChange}
                                         className={formStyles.input}
                                         required
                                         readOnly
@@ -277,38 +283,40 @@ export default function FokotanyAdd() {
                                     ref={mapContainerRef}
                                 />
                             </div>
-                            
-                            <div className="flex justify-end space-x-3 pt-4">
-                                <Button 
-                                    variant="outline" 
-                                    type="button" 
-                                    className="w-24"
-                                    onClick={handleCancel}
-                                >
-                                    Annuler
-                                </Button>
-                                <Button 
-                                    type="submit" 
-                                    className="w-24"
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Ajout...
-                                        </>
-                                    ) : (
-                                        "Ajouter"
-                                    )}
-                                </Button>
-                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <Button 
+                                variant="outline" 
+                                type="button" 
+                                className="w-24"
+                                onClick={handleCancel}
+                            >
+                                Annuler
+                            </Button>
+                            <Button 
+                                type="submit" 
+                                className="w-24"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Ajout...
+                                    </>
+                                ) : (
+                                    "Ajouter"
+                                )}
+                            </Button>
                         </div>
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            <div className="w-full border-t border-gray-200 my-6"></div>
         </div>
     );
 }

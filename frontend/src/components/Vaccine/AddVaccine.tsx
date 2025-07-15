@@ -259,8 +259,8 @@ export default function AddVaccine() {
 
             <Dialog>
                 <DialogTrigger asChild>
-                    <Button className={formStyles.primaryButton}>
-                        Ajouter un vaccin <CiCirclePlus className="text-xl" />
+                    <Button className={`${formStyles.primaryButton} px-6 max-w-xs rounded-full`}>
+                        Ajouter un vaccin <CiCirclePlus className="text-xl ml-1" />
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl bg-white p-4 sm:p-6 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-track-gray-50 border border-gray-100">
@@ -638,6 +638,8 @@ export default function AddVaccine() {
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            <div className="w-full border-t border-gray-200 my-6"></div>
         </div>
     );
 }
