@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BellIcon, BellAlertIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { useNotification, Notification as NotificationType } from '../../contexts/NotificationContext';
 import { format } from 'date-fns';
@@ -9,8 +9,7 @@ interface NotificationCenterProps {
 }
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, isLoading } = useNotification();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, isLoading } = useNotification();
 
   // Fonction pour formater la date
   const formatDate = (dateString: string) => {
@@ -58,7 +57,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
 
   // Fonction pour fermer le panneau de notifications
   const handleClose = () => {
-    setIsOpen(false);
     if (onClose) onClose();
   };
 
@@ -72,126 +70,114 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
       window.location.href = notification.actionLink;
     }
   };
+  
+  // Fonction pour supprimer une notification
+  const handleDeleteNotification = (e: React.MouseEvent, notificationId: number) => {
+    e.stopPropagation(); // Empêcher la propagation du clic
+    deleteNotification(notificationId);
+  };
+  
+  // Fonction pour supprimer toutes les notifications
+  const handleDeleteAllNotifications = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer toutes les notifications ?')) {
+      deleteAllNotifications();
+    }
+  };
 
   return (
-    <div className="relative">
-      {/* Bouton de notification avec badge */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
-      >
-        <BellIcon className="h-6 w-6" />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-
-      {/* Panneau de notifications */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-lg z-50 max-h-[80vh] overflow-hidden flex flex-col">
-          {/* En-tête */}
-          <div className="flex justify-between items-center p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <BellIcon className="h-5 w-5 text-primary" />
-              Notifications
-              {unreadCount > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                  {unreadCount}
-                </span>
-              )}
-            </h2>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="p-1 rounded-full hover:bg-gray-100 text-blue-600 hover:text-blue-800"
-                  title="Marquer tout comme lu"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-              )}
-              <button
-                onClick={handleClose}
-                className="p-1 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-                aria-label="Fermer"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Liste des notifications */}
-          <div className="overflow-y-auto flex-grow">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <BellIcon className="h-12 w-12 mx-auto text-gray-300" />
-                <p className="mt-2">Aucune notification</p>
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-blue-50' : ''}`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex items-start">
-                    <div className={`flex-shrink-0 ${getTypeColor(notification.type)}`}>
-                      {getCategoryIcon(notification.category)}
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <div className="flex justify-between">
-                        <p className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {notification.title}
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNotification(notification.id);
-                          }}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <p className={`text-sm ${!notification.isRead ? 'text-gray-700' : 'text-gray-500'}`}>
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {formatDate(notification.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Pied de page */}
-          {notifications.length > 0 && (
-            <div className="px-4 py-3 bg-gray-50 border-t text-center">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                Fermer
-              </button>
-            </div>
+    <div className="w-full bg-white rounded-lg shadow-lg z-50 max-h-[80vh] overflow-hidden flex flex-col">
+      {/* En-tête */}
+      <div className="flex justify-between items-center p-4 border-b border-gray-100">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <BellIcon className="h-5 w-5 text-primary" />
+          Notifications
+          {unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
+              {unreadCount}
+            </span>
           )}
+        </h2>
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="p-1 rounded-full hover:bg-gray-100 text-blue-600 hover:text-blue-800"
+              title="Marquer tout comme lu"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={handleDeleteAllNotifications}
+              className="p-1 rounded-full hover:bg-gray-100 text-red-600 hover:text-red-800"
+              title="Supprimer toutes les notifications"
+            >
+              <TrashIcon className="h-5 w-5" />
+            </button>
+          )}
+          <button
+            onClick={handleClose}
+            className="p-1 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+            aria-label="Fermer"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Liste des notifications */}
+      <div className="overflow-y-auto flex-grow">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <BellIcon className="h-12 w-12 mx-auto text-gray-300" />
+            <p className="mt-2">Aucune notification</p>
+          </div>
+        ) : (
+          notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-blue-50' : ''} relative group`}
+              onClick={() => handleNotificationClick(notification)}
+            >
+              <div className="flex items-start">
+                <div className={`flex-shrink-0 mr-3 ${getTypeColor(notification.type)}`}>
+                  {getCategoryIcon(notification.category || 'default')}
+                </div>
+                <div className="flex-grow">
+                  <h3 className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}`}>
+                    {notification.title}
+                  </h3>
+                  <p className={`text-sm ${!notification.isRead ? 'text-gray-700' : 'text-gray-500'}`}>
+                    {notification.message}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {formatDate(notification.createdAt)}
+                  </p>
+                </div>
+                <button 
+                  onClick={(e) => handleDeleteNotification(e, notification.id)}
+                  className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Supprimer cette notification"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

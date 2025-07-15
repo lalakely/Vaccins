@@ -44,17 +44,60 @@ function VaccineCoverageChart({ entityType, entityId, className = "" }: VaccineC
       try {
         setLoading(true);
         
-        const vaccinsRes = await axios.get("http://localhost:3000/api/vaccins");
-        const vaccinationsRes = await axios.get(`http://localhost:3000/api/${entityType}/${entityId}/vaccinations`);
-
-        if (!vaccinsRes.data || !vaccinationsRes.data) {
-          throw new Error("Erreur lors de la récupération des données");
+        // Récupération des vaccins avec gestion d'erreur
+        let vaccins = [];
+        try {
+          const vaccinsRes = await axios.get("http://localhost:3000/api/vaccins", {
+            timeout: 5000 // Timeout de 5 secondes
+          });
+          vaccins = vaccinsRes.data || [];
+        } catch (vaccinsError) {
+          console.warn("Impossible de récupérer la liste des vaccins:", vaccinsError);
+          // Continuer avec une liste vide de vaccins
+        }
+        
+        // Récupération des vaccinations avec gestion d'erreur et retry
+        let vaccinations = [];
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            const vaccinationsRes = await axios.get(
+              `http://localhost:3000/api/${entityType}/${entityId}/vaccinations`,
+              {
+                timeout: 5000 // Timeout de 5 secondes
+              }
+            );
+            vaccinations = vaccinationsRes.data || [];
+            break; // Sortir de la boucle si réussi
+          } catch (vaccinationsError: any) {
+            retryCount++;
+            if (retryCount > maxRetries || 
+                (vaccinationsError.response && vaccinationsError.response.status === 404)) {
+              // Ne pas réessayer en cas de 404 ou si on a atteint le nombre max de tentatives
+              console.warn(`Impossible de récupérer les vaccinations pour ${entityType} ${entityId}:`, vaccinationsError);
+              break;
+            }
+            // Attendre avant de réessayer (backoff exponentiel)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
         }
 
-        const vaccins = vaccinsRes.data;
-        const vaccinations = vaccinationsRes.data;
+        // Vérifier si des vaccinations existent et si on a des vaccins
+        if (vaccins.length === 0) {
+          setHasVaccinations(false);
+          setChartData([
+            {
+              name: "Données indisponibles",
+              value: 1,
+              fill: "hsl(var(--chart-3))",
+            },
+          ]);
+          return;
+        }
 
-        // Vérifier si des vaccinations existent
+        // Calculer la couverture
         const coverage = vaccins.map((v: any, index: number) => ({
           name: v.Nom,
           value: vaccinations.filter((vac: any) => vac.vaccin_id === v.id).length,

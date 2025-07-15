@@ -20,5 +20,7 @@ router.delete('/vaccinations/:id', vaccinationController.deleteVaccination);
 // Route pour obtenir le nombre d'enfants vaccinés par un vaccin spécifique
 router.get('/vaccins/:id/count-enfants', vaccinationController.getCountChildrenByVaccine);
 
+// Route pour obtenir tous les enfants avec des vaccins en retard
+router.get('/children-with-overdue-vaccines', vaccinationController.getAllChildrenWithOverdueVaccines);
 
 module.exports = router;

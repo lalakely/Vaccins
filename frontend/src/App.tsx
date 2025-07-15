@@ -9,6 +9,7 @@ import Inscription from './pages/Inscription';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ToastContainer from './components/notifications/ToastContainer';
+import VaccinNotificationManager from './components/Notifications/VaccinNotificationManager';
 import ProtectedRoute from './contexts/ProtectedRoute';
 import DashboardPage from "./pages/DashboardPage";
 import ChildHistoryPage from "./pages/ChildHistoryPage";
@@ -19,6 +20,7 @@ function App() {
             <NotificationProvider>
                 <Router>
                     <ToastContainer />
+                    <VaccinNotificationManager />
                     <Routes>
                     {/* Routes publiques */}
                     <Route path="/" element={<Connexion />} />

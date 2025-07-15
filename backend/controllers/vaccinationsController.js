@@ -583,3 +583,82 @@ exports.checkAllRappelsAdministered = async (req, res) => {
         res.status(500).json({ message: 'Erreur lors de la vérification des rappels administrés' });
     }
 };
+
+// Récupérer tous les enfants avec des vaccins en retard
+exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
+    try {
+        // Récupérer tous les enfants avec leur âge en jours
+        const [enfants] = await db.query(`
+            SELECT 
+                e.id, 
+                e.Nom, 
+                e.Prenom, 
+                e.CODE, 
+                e.date_naissance,
+                e.Fokotany,
+                e.Hameau,
+                DATEDIFF(CURRENT_DATE, e.date_naissance) as age_in_days
+            FROM Enfants e
+        `);
+
+        // Tableau pour stocker les enfants avec leurs vaccins en retard
+        const childrenWithOverdueVaccines = [];
+
+        // Pour chaque enfant, vérifier s'il a des vaccins en retard
+        for (const enfant of enfants) {
+            // Récupérer les vaccins administrés à cet enfant
+            const [administeredVaccines] = await db.query(`
+                SELECT vaccin_id 
+                FROM Vaccinations 
+                WHERE enfant_id = ?
+            `, [enfant.id]);
+            
+            const administeredVaccineIds = administeredVaccines.map(v => v.vaccin_id);
+            
+            // Récupérer les vaccins qui auraient déjà dû être administrés selon l'âge de l'enfant
+            const [overdueVaccines] = await db.query(`
+                SELECT v.id, v.Nom as name, v.Description, v.Duree as age_recommande,
+                       DATEDIFF(CURRENT_DATE, DATE_ADD(?, INTERVAL v.Duree DAY)) as days_overdue
+                FROM Vaccins v
+                WHERE v.Duree < ?
+                AND v.id NOT IN (${administeredVaccineIds.length > 0 ? '?' : 'SELECT 0'})
+            `, administeredVaccineIds.length > 0 ? 
+                [enfant.date_naissance, enfant.age_in_days, administeredVaccineIds] : 
+                [enfant.date_naissance, enfant.age_in_days]);
+            
+            // Également vérifier les rappels en retard
+            const [overdueRappels] = await db.query(`
+                SELECT 
+                    v.id, 
+                    v.Nom as name, 
+                    v.Description,
+                    vs.delai as delai_rappel,
+                    vac.date_vaccination as date_vaccination_parent,
+                    DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY) as date_due,
+                    DATEDIFF(CURRENT_DATE, DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY)) as days_overdue
+                FROM 
+                    VaccinSuite vs
+                JOIN Vaccins v ON vs.suite_id = v.id
+                JOIN Vaccinations vac ON vs.vaccin_id = vac.vaccin_id AND vac.enfant_id = ?
+                WHERE 
+                    vs.type = 'rappel' AND
+                    DATE_ADD(vac.date_vaccination, INTERVAL vs.delai DAY) < CURRENT_DATE AND
+                    vs.suite_id NOT IN (SELECT vaccin_id FROM Vaccinations WHERE enfant_id = ?)
+            `, [enfant.id, enfant.id]);
+
+            // Si l'enfant a des vaccins en retard, l'ajouter à la liste
+            const allOverdue = [...overdueVaccines, ...overdueRappels];
+            if (allOverdue.length > 0) {
+                childrenWithOverdueVaccines.push({
+                    enfant: enfant,
+                    overdue_vaccines: allOverdue
+                });
+            }
+        }
+
+        res.json(childrenWithOverdueVaccines);
+    } catch (err) {
+        console.error('Error fetching children with overdue vaccines:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+};

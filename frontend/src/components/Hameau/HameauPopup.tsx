@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/card";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { WifiOff } from "lucide-react";
 
 interface HameauPopupProps {
   hameau: {
@@ -42,8 +44,10 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [vaccinationStats, setVaccinationStats] = useState<{total: number, vaccinated: number, percentage: number}>({total: 0, vaccinated: 0, percentage: 0});
   const [chartLoading, setChartLoading] = useState(true);
+  const [apiAvailable, setApiAvailable] = useState(true); // Indiquer si l'API est disponible
   const { showSuccess, showError, showWarning } = useNotificationService();
   const warningShown = useRef<boolean>(false); // Pour suivre si l'avertissement a déjà été affiché
+  const errorShown = useRef<boolean>(false); // Pour éviter d'afficher plusieurs fois la même erreur
   
   // Configuration du graphique
   const chartConfig = {
@@ -58,18 +62,40 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
     
     try {
       setChartLoading(true);
+      setApiAvailable(true); // Réinitialiser l'état de l'API au début de la requête
       
-      const response = await axios.get(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}/stats`);
+      // Utiliser un AbortController pour gérer le timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
+      
+      const response = await axios.get(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}/stats`, {
+        signal: controller.signal,
+        timeout: 5000 // Timeout de 5 secondes (redondant avec AbortController mais plus sûr)
+      });
+      
+      clearTimeout(timeoutId);
       
       if (response.data) {
         const { total_enfants, enfants_vaccines } = response.data;
         const percentage = total_enfants > 0 ? Math.round((enfants_vaccines / total_enfants) * 100) : 0;
         
-        setVaccinationStats({
+        // Préparer les données de statistiques
+        const stats = {
           total: total_enfants,
           vaccinated: enfants_vaccines,
           percentage: percentage
-        });
+        };
+        
+        // Sauvegarder dans le cache local pour une utilisation hors ligne
+        try {
+          const cacheKey = `hameau_stats_${hameau.ID || hameau.id}`;
+          localStorage.setItem(cacheKey, JSON.stringify(stats));
+          console.log('Données de vaccination sauvegardées dans le cache pour le hameau:', hameau.Nom);
+        } catch (cacheError) {
+          console.error('Erreur lors de la sauvegarde des données dans le cache:', cacheError);
+        }
+        
+        setVaccinationStats(stats);
         
         setChartData([
           {
@@ -91,12 +117,82 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
           warningShown.current = true; // Marquer que l'avertissement a été affiché
         }
       }
-    } catch (error) {
-      console.error("Erreur lors du chargement des statistiques :", error);
-      setChartData([]);
+    } catch (error: any) {
+      setApiAvailable(false);
+      
+      // Gérer les différents types d'erreurs
+      if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+        console.warn("Timeout lors de la récupération des statistiques du hameau:", error);
+        // Utiliser des données en cache
+        loadCachedData();
+      } else if (error.response) {
+        // Erreur avec réponse du serveur (400, 404, 500, etc.)
+        console.warn(`Erreur ${error.response.status} lors de la récupération des statistiques du hameau:`, error);
+        loadCachedData();
+        
+        // N'afficher l'erreur qu'une seule fois
+        if (!errorShown.current) {
+          showError("Erreur de chargement", `Impossible de charger les statistiques du hameau. Mode hors ligne activé.`);
+          errorShown.current = true;
+        }
+      } else {
+        console.error("Erreur lors du chargement des statistiques :", error);
+        loadCachedData();
+      }
     } finally {
       setChartLoading(false);
     }
+  };
+  
+  // Fonction pour utiliser les données en cache si disponibles
+  const loadCachedData = () => {
+    try {
+      const cacheKey = `hameau_stats_${hameau.ID || hameau.id}`;
+      const cachedStats = localStorage.getItem(cacheKey);
+      
+      if (cachedStats) {
+        const stats = JSON.parse(cachedStats);
+        setVaccinationStats({
+          total: stats.total,
+          vaccinated: stats.vaccinated,
+          percentage: stats.percentage
+        });
+        
+        setChartData([
+          {
+            name: "Vaccinés (données locales)",
+            value: stats.percentage,
+            fill: "hsl(var(--chart-1))"
+          }
+        ]);
+        console.log('Données de vaccination chargées depuis le cache pour le hameau:', hameau.Nom);
+        return true;
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des données en cache:', error);
+    }
+    
+    // Si aucune donnée en cache n'est disponible, utiliser des estimations basées sur les propriétés du hameau
+    if (hameau.nombre_enfant && hameau.nombre_enfant_vaccines) {
+      const percentage = Math.round((hameau.nombre_enfant_vaccines / hameau.nombre_enfant) * 100);
+      
+      setVaccinationStats({
+        total: hameau.nombre_enfant,
+        vaccinated: hameau.nombre_enfant_vaccines,
+        percentage: percentage
+      });
+      
+      setChartData([
+        {
+          name: "Vaccinés (estimé)",
+          value: percentage,
+          fill: "hsl(var(--chart-1))"
+        }
+      ]);
+      return true;
+    }
+    
+    return false;
   };
 
   useEffect(() => {
@@ -115,16 +211,35 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
     setLoading(true);
 
     try {
-      await axios.delete(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}`);
+      // Utiliser un AbortController pour gérer le timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
+      
+      await axios.delete(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}`, {
+        signal: controller.signal,
+        timeout: 5000 // Timeout de 5 secondes
+      });
+      
+      clearTimeout(timeoutId);
+      
       showSuccess("Suppression réussie", `Le hameau ${hameau.Nom} a été supprimé avec succès`, {
         actionLink: "/Hameau",
         entityType: "hameau",
         entityId: hameau.ID || hameau.id
       });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur réseau :", error);
-      showError("Échec de la suppression", `Une erreur est survenue lors de la suppression du hameau ${hameau.Nom}`);
+      
+      // Gérer les différents types d'erreurs
+      if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+        showError("Erreur de connexion", "Le serveur met trop de temps à répondre. Veuillez réessayer plus tard.");
+      } else if (error.response) {
+        // Erreur avec réponse du serveur (400, 404, 500, etc.)
+        showError("Erreur de suppression", `Impossible de supprimer le hameau (${error.response.status}). Veuillez réessayer plus tard.`);
+      } else {
+        showError("Erreur de suppression", "Impossible de supprimer le hameau. Veuillez réessayer plus tard.");
+      }
     } finally {
       setLoading(false);
     }
@@ -134,9 +249,16 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2">
-            <MapIcon className="h-6 w-6 text-green-500" />
-            Détails du Hameau: {hameau.Nom}
+          <DialogTitle className="text-xl font-bold">
+            <div className="flex items-center gap-2">
+              <MapIcon className="h-6 w-6 text-green-500" />
+              <span>Détails du Hameau: {hameau.Nom}</span>
+              {!apiAvailable && (
+                <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-1 text-xs">
+                  <WifiOff className="h-3 w-3" /> Mode démo
+                </Badge>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
         

@@ -38,8 +38,8 @@ exports.getNotifications = async (req, res) => {
 // Créer une nouvelle notification
 exports.createNotification = async (req, res) => {
   try {
+    const userId = req.user.id; // Utiliser l'ID de l'utilisateur authentifié
     const { 
-      userId, // peut être null pour les notifications globales
       title, 
       message, 
       type, 
@@ -55,12 +55,20 @@ exports.createNotification = async (req, res) => {
       return res.status(400).json({ message: 'Titre, message, type et catégorie sont obligatoires' });
     }
     
+    // Formater la date d'expiration si elle existe (convertir ISO en format MySQL)
+    let formattedExpiresAt = null;
+    if (expiresAt) {
+      // Convertir ISO date string en format MySQL YYYY-MM-DD HH:MM:SS
+      const date = new Date(expiresAt);
+      formattedExpiresAt = date.toISOString().slice(0, 19).replace('T', ' ');
+    }
+    
     // Insérer la notification dans la base de données
     const [result] = await db.query(
       `INSERT INTO notifications 
         (user_id, title, message, type, category, action_link, entity_type, entity_id, expires_at) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId || null, title, message, type, category, actionLink, entityType, entityId, expiresAt]
+      [userId, title, message, type, category, actionLink, entityType, entityId, formattedExpiresAt]
     );
     
     // Récupérer la notification créée

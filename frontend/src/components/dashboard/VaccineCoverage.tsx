@@ -33,16 +33,64 @@ function VaccineCoverage() {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const vaccinsRes = await fetch("http://localhost:3000/api/vaccins");
-        const vaccinationsRes = await fetch("http://localhost:3000/api/vaccinations");
+        setLoading(true);
+        
+        // Récupération des vaccins avec gestion d'erreur
+        let vaccins: any[] = [];
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const vaccinsRes = await fetch("http://localhost:3000/api/vaccins", {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          
+          if (vaccinsRes.ok) {
+            vaccins = await vaccinsRes.json();
+          } else {
+            console.warn(`Erreur ${vaccinsRes.status} lors de la récupération des vaccins`);
+          }
+        } catch (vaccinsError) {
+          console.warn("Impossible de récupérer la liste des vaccins:", vaccinsError);
+          // Continuer avec une liste vide de vaccins
+        }
+        
+        // Récupération des vaccinations avec gestion d'erreur
+        let vaccinations: any[] = [];
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const vaccinationsRes = await fetch("http://localhost:3000/api/vaccinations", {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          
+          if (vaccinationsRes.ok) {
+            vaccinations = await vaccinationsRes.json();
+          } else {
+            console.warn(`Erreur ${vaccinationsRes.status} lors de la récupération des vaccinations`);
+          }
+        } catch (vaccinationsError) {
+          console.warn("Impossible de récupérer les vaccinations:", vaccinationsError);
+          // Continuer avec une liste vide de vaccinations
+        }
 
-        if (!vaccinsRes.ok) throw new Error(`Erreur vaccins: ${vaccinsRes.status}`);
-        if (!vaccinationsRes.ok) throw new Error(`Erreur vaccinations: ${vaccinationsRes.status}`);
+        // Vérifier si des vaccinations existent et si on a des vaccins
+        if (vaccins.length === 0) {
+          setHasVaccinations(false);
+          setChartData([
+            {
+              name: "Données indisponibles",
+              value: 1,
+              fill: "hsl(var(--chart-3))",
+            },
+          ]);
+          return;
+        }
 
-        const vaccins = await vaccinsRes.json();
-        const vaccinations = await vaccinationsRes.json();
-
-        // Vérifier si des vaccinations existent
+        // Calculer la couverture
         const coverage = vaccins.map((v: any, index: number) => ({
           name: v.Nom,
           value: vaccinations.filter((vac: any) => vac.vaccin_id === v.id).length,
@@ -50,7 +98,7 @@ function VaccineCoverage() {
         }));
 
         // Si aucune vaccination ou toutes les valeurs sont à 0
-        if (vaccinations.length === 0 || coverage.every((item) => item.value === 0)) {
+        if (vaccinations.length === 0 || coverage.every((item: any) => item.value === 0)) {
           setHasVaccinations(false);
           setChartData([
             {
@@ -63,8 +111,6 @@ function VaccineCoverage() {
           setHasVaccinations(true);
           setChartData(coverage);
         }
-
-        setLoading(false);
       } catch (error) {
         console.error("Erreur lors du chargement des données :", error);
         setHasVaccinations(false);
@@ -75,6 +121,7 @@ function VaccineCoverage() {
             fill: "hsl(var(--chart-1))",
           },
         ]);
+      } finally {
         setLoading(false);
       }
     };

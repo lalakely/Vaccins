@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import ApiService from "@/utils/apiService";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useNotification } from "@/contexts/NotificationContext";
 import {
   Table,
   TableHeader,
@@ -47,6 +48,13 @@ interface HistoryItem {
   history_type: 'regular' | 'deletion';
 }
 
+// Interface pour les changements détectés
+interface Change {
+  field: string;
+  oldValue: any;
+  newValue: any;
+}
+
 export default function ChildHistory() {
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +62,17 @@ export default function ChildHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<HistoryItem | null>(null);
+  // Plus de mode de démonstration - utiliser uniquement l'API réelle
   const itemsPerPage = 10;
+  
+  // Accès au système de notifications
+  const { addNotification } = useNotification();
+
+  // Calcul des éléments à afficher sur la page actuelle
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = historyData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(historyData.length / itemsPerPage);
 
   useEffect(() => {
     fetchHistoryData();
@@ -63,81 +81,106 @@ export default function ChildHistory() {
   const fetchHistoryData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:3000/api/history", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      
+      // Vérifier si l'API est disponible
+      try {
+        const response = await ApiService.get("/api/history", {
+          retries: 2,          // Faire jusqu'à 2 tentatives
+          retryDelay: 1000,    // Attendre 1 seconde entre les tentatives
+          timeout: 5000,       // Timeout après 5 secondes
+          silentError: true    // Ne pas logger les erreurs (on les gère nous-mêmes)
+        });
+        setHistoryData(response.data);
+        // Données de l'API réelles chargées avec succès
+        setError(null);
+      } catch (apiError: any) {
+        // En cas d'erreur, afficher un message d'erreur approprié
+        if (apiError.response && apiError.response.status === 404) {
+          console.error("Endpoint d'historique non disponible");
+          setHistoryData([]);
+          setError("L'historique n'est pas disponible pour le moment. Veuillez contacter l'administrateur.");
+        } else if (apiError.code === 'ECONNABORTED' || apiError.name === 'AbortError') {
+          console.error("Timeout lors de la connexion à l'API d'historique");
+          setHistoryData([]);
+          setError("La connexion au serveur a pris trop de temps. Veuillez vérifier votre connexion et réessayer.");
+        } else {
+          throw apiError;
+        }
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la récupération de l'historique:", error);
+      setHistoryData([]);
+      // Erreur lors de la récupération des données
+      
+      addNotification({
+        id: Date.now(),
+        title: "Erreur de chargement",
+        message: "Impossible de récupérer l'historique des modifications.",
+        type: "error",
+        category: "system",
+        isRead: false,
+        createdAt: new Date().toISOString()
       });
-      setHistoryData(response.data);
-      setError(null);
-    } catch (err) {
-      console.error("Erreur lors de la récupération de l'historique:", err);
-      setError(
-        "Impossible de charger l'historique des modifications. Veuillez réessayer plus tard."
-      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleRevert = async (historyId: number, historyType: string) => {
-    if (
-      !window.confirm(
-        "Êtes-vous sûr de vouloir annuler cette modification ? Cette action est irréversible."
-      )
-    ) {
-      return;
-    }
-
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      
-      // Utiliser l'API appropriée en fonction du type d'historique
-      if (historyType === 'deletion') {
-        // Pour les suppressions, utiliser l'API de restauration des enfants supprimés
-        await axios.post(
-          `http://localhost:3000/api/deleted-children/revert/${historyId}`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      // Déclencher une reversion en fonction du type d'historique
+      let response;
+      if (historyType === 'regular') {
+        response = await ApiService.post(`/api/history/revert/${historyId}`, {}, {
+          retries: 1,          // Faire une seule tentative supplémentaire
+          timeout: 10000       // Donner plus de temps pour cette opération
+        });
+      } else if (historyType === 'deletion') {
+        response = await ApiService.post(`/api/deleted-children/restore/${historyId}`, {}, {
+          retries: 1,          // Faire une seule tentative supplémentaire
+          timeout: 10000       // Donner plus de temps pour cette opération
+        });
       } else {
-        // Pour les autres types d'historique, utiliser l'API standard de revert
-        await axios.post(
-          `http://localhost:3000/api/history/revert/${historyId}`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        throw new Error("Type d'historique non reconnu");
       }
       
-      // Rafraîchir les données après le revert
-      await fetchHistoryData();
-      alert("Modification annulée avec succès");
-    } catch (err) {
-      console.error("Erreur lors de l'annulation de la modification:", err);
-      alert(
-        "Impossible d'annuler la modification. Veuillez réessayer plus tard."
-      );
-    } finally {
-      setLoading(false);
+      addNotification({
+        id: Date.now(),
+        title: "Succès",
+        message: "La modification a été annulée avec succès.",
+        type: "success",
+        category: "action_feedback",
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+      
+      // Actualiser les données après la réversion
+      fetchHistoryData();
+      
+      return response.data;
+    } catch (error: any) {
+      console.error("Erreur lors de l'annulation de la modification:", error);
+      
+      addNotification({
+        id: Date.now(),
+        title: "Erreur",
+        message: error.response?.data?.message || "Impossible d'annuler cette modification.",
+        type: "error",
+        category: "system",
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+      
+      throw error;
     }
   };
 
-  const handleViewDetails = (history) => {
+  const handleViewDetails = (history: HistoryItem) => {
     setSelectedHistory(history);
     setShowDetails(true);
   };
 
-  const getActionIcon = (actionType) => {
+  const getActionIcon = (actionType: string) => {
     switch (actionType) {
       case "CREATE":
         return <Plus className="h-4 w-4" />;
@@ -146,216 +189,194 @@ export default function ChildHistory() {
       case "DELETE":
         return <Trash className="h-4 w-4" />;
       default:
-        return null;
+        return <FileText className="h-4 w-4" />;
     }
   };
 
-  const getActionBadge = (actionType) => {
+  const getActionBadge = (actionType: string) => {
     switch (actionType) {
       case "CREATE":
         return (
-          <Badge className="bg-green-500 hover:bg-green-600">Ajout</Badge>
+          <Badge className="bg-green-100 text-green-800 border-green-300">
+            <Plus className="h-3 w-3 mr-1" /> Création
+          </Badge>
         );
       case "UPDATE":
         return (
-          <Badge className="bg-blue-500 hover:bg-blue-600">Modification</Badge>
+          <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+            <Edit className="h-3 w-3 mr-1" /> Modification
+          </Badge>
         );
       case "DELETE":
         return (
-          <Badge className="bg-red-500 hover:bg-red-600">Suppression</Badge>
+          <Badge className="bg-red-100 text-red-800 border-red-300">
+            <Trash className="h-3 w-3 mr-1" /> Suppression
+          </Badge>
         );
       default:
         return <Badge>Inconnu</Badge>;
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), "dd MMMM yyyy à HH:mm:ss", {
-        locale: fr,
-      });
-    } catch (e) {
-      return dateString;
+      const date = new Date(dateString);
+      return format(date, "d MMMM yyyy 'à' HH:mm", { locale: fr });
+    } catch (error) {
+      return "Date inconnue";
     }
   };
 
-  // Pagination
-  const totalPages = Math.ceil(historyData.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = historyData.slice(indexOfFirstItem, indexOfLastItem);
-
   // Fonction pour comparer les données avant/après et identifier les changements
-  const getChanges = (oldData, newData) => {
-    if (!oldData || !newData) return [];
+  const getChanges = (oldData: any, newData: any): Change[] => {
+    const changes: Change[] = [];
     
-    const changes = [];
-    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
+    if (!oldData || !newData) {
+      return changes;
+    }
     
-    allKeys.forEach(key => {
-      // Ignorer les champs techniques ou non pertinents
-      if (key === 'id' || key === 'created_at' || key === 'updated_at') return;
+    try {
+      const oldObj = typeof oldData === 'string' ? JSON.parse(oldData) : oldData;
+      const newObj = typeof newData === 'string' ? JSON.parse(newData) : newData;
       
-      const oldValue = oldData[key];
-      const newValue = newData[key];
+      // Vérifier les champs modifiés
+      const allKeys = [...new Set([...Object.keys(oldObj || {}), ...Object.keys(newObj || {})])];
       
-      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-        changes.push({
-          field: key,
-          oldValue: oldValue !== undefined ? oldValue : 'Non défini',
-          newValue: newValue !== undefined ? newValue : 'Non défini'
-        });
-      }
-    });
+      allKeys.forEach(key => {
+        const oldValue = oldObj ? oldObj[key] : null;
+        const newValue = newObj ? newObj[key] : null;
+        
+        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          changes.push({
+            field: key,
+            oldValue,
+            newValue
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'analyse des changements:", error);
+    }
     
     return changes;
   };
 
+  // Pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
-    <div className="p-6 flex flex-col items-center pt-[70px] overflow-y-auto w-full relative transition-all duration-300 ">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-gray-800 flex items-center gap-2">
-        <Clock className="text-gray-600" /> Historique des modifications
-      </h1>
+    <div className="p-4">
+      <Card>
+        <CardHeader className="flex justify-between items-center">
+          <CardTitle className="text-xl font-bold">Historique des modifications</CardTitle>
+          {error && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+              Mode hors ligne
+            </Badge>
+          )}
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="flex items-center gap-2 mb-4 text-red-500">
+              <AlertCircle className="h-4 w-4" /> {error}
+            </div>
+          )}
 
-      {loading ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-4xl p-6 text-center shadow-lg mx-auto bg-white rounded-lg">
-          <CardHeader>
-            <Loader2 className="w-12 h-12 text-gray-500 animate-spin mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <CardTitle className="text-gray-800 text-lg font-semibold">
-              Chargement en cours...
-            </CardTitle>
-            <p className="text-gray-600 text-sm">Veuillez patienter.</p>
-          </CardContent>
-        </Card>
-      ) : error ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-4xl p-6 text-center shadow-lg mx-auto bg-white rounded-lg">
-          <CardHeader>
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <CardTitle className="text-gray-800 text-lg font-semibold">
-              Erreur
-            </CardTitle>
-            <p className="text-gray-600 text-sm">{error}</p>
-          </CardContent>
-        </Card>
-      ) : historyData.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-4xl p-6 text-center shadow-lg mx-auto bg-white rounded-lg">
-          <CardHeader>
-            <FileText className="w-12 h-12 text-gray-500 mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <CardTitle className="text-gray-800 text-lg font-semibold">
-              Aucun historique disponible
-            </CardTitle>
-            <p className="text-gray-600 text-sm">
-              Aucune modification n'a été enregistrée.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <Card className="overflow-x-auto shadow-lg rounded-lg border border-gray-200 w-full max-w-4xl mx-auto bg-white">
-            <Table className="w-full text-base">
-              <TableHeader>
-                <TableRow className="bg-gray-50 text-gray-800">
-                  <TableHead className="font-semibold p-3 text-center">
-                    Date
-                  </TableHead>
-                  <TableHead className="font-semibold p-3 text-center">
-                    Enfant
-                  </TableHead>
-                  <TableHead className="font-semibold p-3 text-center">
-                    Action
-                  </TableHead>
-                  <TableHead className="font-semibold p-3 text-center">
-                    Utilisateur
-                  </TableHead>
-                  <TableHead className="font-semibold p-3 text-center">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentItems.map((history) => {
-                  const oldData = history.old_data ? JSON.parse(history.old_data) : null;
-                  const newData = history.new_data ? JSON.parse(history.new_data) : null;
-                  const childName = history.Nom && history.Prenom 
-                    ? `${history.Nom} ${history.Prenom}` 
-                    : (oldData ? `${oldData.Nom} ${oldData.Prenom}` : 
-                       (newData ? `${newData.Nom} ${newData.Prenom}` : 'Inconnu'));
-                  
-                  return (
-                    <TableRow
-                      key={history.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <TableCell className="p-3 text-center">
-                        {formatDate(history.action_date)}
-                      </TableCell>
-                      <TableCell className="p-3 text-center">
-                        {childName}
-                      </TableCell>
-                      <TableCell className="p-3 text-center">
-                        {getActionBadge(history.action_type)}
-                      </TableCell>
-                      <TableCell className="p-3 text-center">
-                        {history.username || "Système"}
-                      </TableCell>
-                      <TableCell className="p-3 text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetails(history)}
-                            className="text-gray-700 border-gray-300 hover:bg-gray-100"
-                          >
-                            Détails
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRevert(history.id, history.history_type)}
-                            className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                            title={"Annuler cette modification"}
-                          >
-                            <RotateCcw className="h-4 w-4 mr-1" /> Annuler
-                          </Button>
-                        </div>
-                      </TableCell>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center p-8">
+              <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+              <p className="mt-2 text-gray-600">Chargement de l'historique...</p>
+            </div>
+          ) : historyData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <FileText className="w-12 h-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">Aucun historique</h3>
+              <p className="mt-1 text-gray-500">
+                Aucune modification n'a été enregistrée.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[180px]">Date</TableHead>
+                      <TableHead>Enfant</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Utilisateur</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {currentItems.map((history) => {
+                      const childName = `${history.Nom || ""} ${history.Prenom || ""}`.trim() || "Inconnu";
+                      
+                      return (
+                        <TableRow key={history.id}>
+                          <TableCell className="font-medium">
+                            {formatDate(history.action_date)}
+                          </TableCell>
+                          <TableCell>{childName}</TableCell>
+                          <TableCell>{getActionBadge(history.action_type)}</TableCell>
+                          <TableCell>{history.username || "Système"}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewDetails(history)}
+                              >
+                                Détails
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRevert(history.id, history.history_type)}
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              >
+                                <RotateCcw className="h-3 w-3 mr-1" /> Annuler
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
 
-          {/* Pagination */}
-          <div className="flex items-center gap-4 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              Précédent
-            </Button>
-            <span className="text-gray-800 font-semibold">
-              Page {currentPage} sur {totalPages || 1}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-            >
-              Suivant
-            </Button>
-          </div>
-        </>
-      )}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-4">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Précédent
+                    </Button>
+                    <span className="text-sm">
+                      Page {currentPage} sur {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Modal de détails */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
@@ -399,7 +420,11 @@ export default function ChildHistory() {
                       Données ajoutées
                     </h3>
                     <pre className="bg-gray-50 p-3 rounded-md text-sm overflow-x-auto">
-                      {JSON.stringify(JSON.parse(selectedHistory.new_data || "{}"), null, 2)}
+                      {JSON.stringify(
+                        selectedHistory.new_data ? JSON.parse(selectedHistory.new_data) : {},
+                        null,
+                        2
+                      )}
                     </pre>
                   </div>
                 )}
@@ -410,7 +435,11 @@ export default function ChildHistory() {
                       Données supprimées
                     </h3>
                     <pre className="bg-gray-50 p-3 rounded-md text-sm overflow-x-auto">
-                      {JSON.stringify(JSON.parse(selectedHistory.old_data || "{}"), null, 2)}
+                      {JSON.stringify(
+                        selectedHistory.old_data ? JSON.parse(selectedHistory.old_data) : {},
+                        null,
+                        2
+                      )}
                     </pre>
                   </div>
                 )}
@@ -430,13 +459,25 @@ export default function ChildHistory() {
                       </TableHeader>
                       <TableBody>
                         {getChanges(
-                          JSON.parse(selectedHistory.old_data || "{}"),
-                          JSON.parse(selectedHistory.new_data || "{}")
+                          selectedHistory.old_data,
+                          selectedHistory.new_data
                         ).map((change, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-medium">{change.field}</TableCell>
-                            <TableCell>{String(change.oldValue)}</TableCell>
-                            <TableCell>{String(change.newValue)}</TableCell>
+                            <TableCell>
+                              {change.oldValue === null
+                                ? "Non défini"
+                                : typeof change.oldValue === "object"
+                                ? JSON.stringify(change.oldValue)
+                                : String(change.oldValue)}
+                            </TableCell>
+                            <TableCell>
+                              {change.newValue === null
+                                ? "Non défini"
+                                : typeof change.newValue === "object"
+                                ? JSON.stringify(change.newValue)
+                                : String(change.newValue)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

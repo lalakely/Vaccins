@@ -6,9 +6,11 @@ import {
   TrashIcon
 } from "@heroicons/react/24/solid";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { RadialBarChart, RadialBar, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
+import { WifiOff } from "lucide-react";
 import useNotificationService from "../../hooks/useNotificationService";
 import {
   ChartConfig,
@@ -40,8 +42,10 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [vaccinationStats, setVaccinationStats] = useState<{total: number, vaccinated: number, percentage: number}>({total: 0, vaccinated: 0, percentage: 0});
   const [chartLoading, setChartLoading] = useState<boolean>(true);
+  const [apiAvailable, setApiAvailable] = useState(true); // Indiquer si l'API est disponible
   const { showSuccess, showError, showWarning } = useNotificationService();
   const warningShown = useRef<boolean>(false); // Pour suivre si l'avertissement a déjà été affiché
+  const errorShown = useRef<boolean>(false); // Pour éviter d'afficher plusieurs fois la même erreur
 
   // Configuration du graphique
   const chartConfig = {
@@ -57,8 +61,18 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
     
     try {
       setChartLoading(true);
+      setApiAvailable(true); // Réinitialiser l'état de l'API au début de la requête
       
-      const response = await axios.get(`http://localhost:3000/api/fokotany/${fokotany.ID}/stats`);
+      // Utiliser un AbortController pour gérer le timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
+      
+      const response = await axios.get(`http://localhost:3000/api/fokotany/${fokotany.ID}/stats`, {
+        signal: controller.signal,
+        timeout: 5000 // Timeout de 5 secondes (redondant avec AbortController mais plus sûr)
+      });
+      
+      clearTimeout(timeoutId);
       
       if (response.data) {
         const { total_enfants, enfants_vaccines } = response.data;
@@ -90,12 +104,51 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
           warningShown.current = true; // Marquer que l'avertissement a été affiché
         }
       }
-    } catch (error) {
-      console.error("Erreur lors du chargement des statistiques :", error);
-      setChartData([]);
+    } catch (error: any) {
+      setApiAvailable(false);
+      
+      // Gérer les différents types d'erreurs
+      if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+        console.warn("Timeout lors de la récupération des statistiques du fokotany:", error);
+        // Utiliser des données de démo
+        setDemoData();
+      } else if (error.response) {
+        // Erreur avec réponse du serveur (400, 404, 500, etc.)
+        console.warn(`Erreur ${error.response.status} lors de la récupération des statistiques du fokotany:`, error);
+        setDemoData();
+        
+        // N'afficher l'erreur qu'une seule fois
+        if (!errorShown.current) {
+          showError("Erreur de chargement", `Impossible de charger les statistiques du fokotany. Mode démo activé.`);
+          errorShown.current = true;
+        }
+      } else {
+        console.error("Erreur lors du chargement des statistiques :", error);
+        setDemoData();
+      }
     } finally {
       setChartLoading(false);
     }
+  };
+  
+  // Fonction pour définir des données de démo en cas d'erreur
+  const setDemoData = () => {
+    // Générer un pourcentage aléatoire entre 30 et 80%
+    const percentage = Math.floor(Math.random() * 50) + 30;
+    
+    setVaccinationStats({
+      total: fokotany.nombre_enfant || 10,
+      vaccinated: Math.floor((fokotany.nombre_enfant || 10) * percentage / 100),
+      percentage: percentage
+    });
+    
+    setChartData([
+      {
+        name: "Vaccinés (démo)",
+        value: percentage,
+        fill: "hsl(var(--chart-1))"
+      }
+    ]);
   };
 
   useEffect(() => {
@@ -114,16 +167,35 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
     setLoading(true);
 
     try {
-      await axios.delete(`http://localhost:3000/api/fokotany/${fokotany.ID}`);
+      // Utiliser un AbortController pour gérer le timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
+      
+      await axios.delete(`http://localhost:3000/api/fokotany/${fokotany.ID}`, {
+        signal: controller.signal,
+        timeout: 5000 // Timeout de 5 secondes
+      });
+      
+      clearTimeout(timeoutId);
+      
       showSuccess("Suppression réussie", `Le fokotany ${fokotany.Nom} a été supprimé avec succès`, {
         actionLink: "/Fokotany",
         entityType: "fokotany",
         entityId: fokotany.ID
       });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur réseau :", error);
-      showError("Échec de la suppression", `Une erreur est survenue lors de la suppression du fokotany ${fokotany.Nom}`);
+      
+      // Gérer les différents types d'erreurs
+      if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+        showError("Erreur de connexion", "Le serveur met trop de temps à répondre. Veuillez réessayer plus tard.");
+      } else if (error.response) {
+        // Erreur avec réponse du serveur (400, 404, 500, etc.)
+        showError("Erreur de suppression", `Impossible de supprimer le fokotany (${error.response.status}). Veuillez réessayer plus tard.`);
+      } else {
+        showError("Erreur de suppression", "Impossible de supprimer le fokotany. Veuillez réessayer plus tard.");
+      }
     } finally {
       setLoading(false);
     }
@@ -133,9 +205,16 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2">
-            <MapPinIcon className="h-6 w-6 text-green-500" />
-            Détails du Fokotany: {fokotany.Nom}
+          <DialogTitle className="text-xl font-bold">
+            <div className="flex items-center gap-2">
+              <MapPinIcon className="h-6 w-6 text-green-500" />
+              <span>Détails du Fokotany: {fokotany.Nom}</span>
+              {!apiAvailable && (
+                <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-1 text-xs">
+                  <WifiOff className="h-3 w-3" /> Mode démo
+                </Badge>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
         

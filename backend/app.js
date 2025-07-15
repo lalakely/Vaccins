@@ -9,6 +9,7 @@ const vaccinationsRoutes = require('./routes/vaccinationsRoutes');
 const authRoutes = require('./routes/authRoutes'); // Import des routes d'authentification
 const childHistoryRoutes = require('./routes/childHistoryRoutes'); // Import des routes d'historique
 const deletedChildrenLogRoutes = require('./routes/deletedChildrenLogRoutes'); // Import des routes pour les logs de suppression
+const notificationsRoutes = require('./routes/notificationsRoutes'); // Import des routes de notifications
 
 const PORT = 3000;
 
@@ -28,6 +29,7 @@ app.use('/api', vaccinationsRoutes);
 app.use('/api/auth', authRoutes); // Utilisation des routes d'authentification
 app.use('/api/history', childHistoryRoutes); // Utilisation des routes d'historique
 app.use('/api/deleted-children', deletedChildrenLogRoutes); // Utilisation des routes pour les logs de suppression
+app.use('/api/notifications', notificationsRoutes); // Utilisation des routes de notifications
 
 app.get('/' , (req, res) => {
     res.send('Hello, World!');

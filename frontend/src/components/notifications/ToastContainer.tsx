@@ -36,7 +36,7 @@ const ToastContainer: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col items-end space-y-2 max-w-md">
+    <div className="fixed top-20 right-4 z-50 flex flex-col items-end space-y-2 max-w-md">
       {toasts.map(toast => (
         <Toast
           key={toast.id}
