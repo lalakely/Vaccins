@@ -1,6 +1,6 @@
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Info, User, Calendar, MapPin, Tag } from "lucide-react";
+import { Info, User, Calendar, MapPin, Tag, Printer } from "lucide-react";
 import { useState } from "react";
 
 interface Enfant {
@@ -20,9 +20,10 @@ interface ChildRowProps {
     enfant: Enfant;
     isEven: boolean;
     onDetailsClick: (enfant: Enfant) => void;
+    onPrintClick?: (enfantId: number | string) => void;
 }
 
-export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowProps) {
+export default function ChildRow({ enfant, isEven, onDetailsClick, onPrintClick }: ChildRowProps) {
     const [isHovered, setIsHovered] = useState(false);
     
     // Calculer l'âge
@@ -115,16 +116,32 @@ export default function ChildRow({ enfant, isEven, onDetailsClick }: ChildRowPro
             </TableCell>
             
             <TableCell className="py-3 px-4 text-right w-[10%]">
-                <Button 
-                    variant="ghost" 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onDetailsClick(enfant);
-                    }} 
-                    className={`rounded-full h-9 w-9 p-0 flex items-center justify-center ${isHovered ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'} transition-all duration-200`}
-                >
-                    <Info className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center justify-end gap-2">
+                    {onPrintClick && (
+                        <Button 
+                            variant="ghost" 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onPrintClick(enfant.id);
+                            }} 
+                            className="rounded-full h-9 w-9 p-0 flex items-center justify-center bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200"
+                            title="Imprimer les informations de cette personne"
+                        >
+                            <Printer className="w-4 h-4" />
+                        </Button>
+                    )}
+                    <Button 
+                        variant="ghost" 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDetailsClick(enfant);
+                        }} 
+                        className={`rounded-full h-9 w-9 p-0 flex items-center justify-center ${isHovered ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'} transition-all duration-200`}
+                        title="Voir les détails"
+                    >
+                        <Info className="w-4 h-4" />
+                    </Button>
+                </div>
             </TableCell>
         </TableRow>
     );

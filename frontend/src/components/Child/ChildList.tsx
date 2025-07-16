@@ -9,18 +9,72 @@ import {
   TableRow,
   TableHead,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
-import { AlertCircle, Loader2, Users, UserPlus, Home, Calendar, Info, Printer } from "lucide-react";
-import { format } from "date-fns";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Loader2, Printer, Download } from "lucide-react";
 import ChildFilters from "./ChildFilters";
+import { useReactToPrint } from "react-to-print";
+import ChildPrintView from "./ChildPrintView";
+import ListPrintView from "./ListPrintView";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import html2pdf from "html2pdf.js";
+
+// Interface pour les vaccins
+interface Vaccine {
+  id: string;
+  vaccin_id: string;
+  Nom: string;
+  name: string;
+  date_vaccination: string;
+}
+
+// Interface pour les rappels
+interface Rappel {
+  delai: number;
+  description: string;
+  id?: string;
+  vaccin_id?: string;
+}
+
+// Interface pour l'enfant
+interface Child {
+  ID?: string;
+  Nom: string;
+  Prenom: string;
+  CODE?: string;
+  date_naissance: string;
+  SEXE: string;
+  NomMere?: string;
+  NomPere?: string;
+  Domicile?: string;
+  Fokotany?: string;
+  Hameau?: string;
+  Telephone?: string;
+}
 
 export default function ChildList() {
-  const [data, setData] = useState([]);
-  const [selectedChild, setSelectedChild] = useState(null);
+  const [data, setData] = useState<any[]>([]);
+  const [selectedChild, setSelectedChild] = useState<any | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // États pour l'impression d'un enfant individuel
+  const [selectedChildData, setSelectedChildData] = useState<Child | null>(null);
+  const [childVaccines, setChildVaccines] = useState<Vaccine[]>([]);
+  const [vaccineRappels, setVaccineRappels] = useState<{[key: string]: Rappel[]}>({});
+  const [administeredRappels, setAdministeredRappels] = useState<{[key: string]: boolean[]}>({});
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [printLoading, setPrintLoading] = useState(false);
+  
+  // États pour l'impression de la liste entière
+  const [showListPrintPreview, setShowListPrintPreview] = useState(false);
+  const [listPrintLoading, setListPrintLoading] = useState(false);
+  
+  // Références pour l'impression
+  const printRef = useRef<HTMLDivElement>(null);
+  const listPrintRef = useRef<HTMLDivElement>(null);
+
   const [filters, setFilters] = useState({
     Nom: "",
     Prenom: "",
@@ -87,314 +141,351 @@ export default function ChildList() {
         })
         .finally(() => setLoading(false));
     }
-  }, [filters.vaccin_id, filters.show_not_vaccinated, filters.rappel_count]); // On refait l'appel API quand le filtre de vaccin ou le checkbox change
+  }, [filters]);
 
+  // Calcul des enfants à afficher pour la pagination
+  const filteredData = data.filter((enfant) => {
+    // Filtrer par nom
+    if (
+      filters.Nom &&
+      !enfant.Nom?.toLowerCase().includes(filters.Nom.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par prénom
+    if (
+      filters.Prenom &&
+      !enfant.Prenom?.toLowerCase().includes(filters.Prenom.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par code
+    if (
+      filters.CODE &&
+      !enfant.CODE?.toLowerCase().includes(filters.CODE.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par sexe
+    if (filters.SEXE && enfant.SEXE !== filters.SEXE) {
+      return false;
+    }
+    // Filtrer par nom de la mère
+    if (
+      filters.NomMere &&
+      !enfant.NomMere?.toLowerCase().includes(filters.NomMere.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par nom du père
+    if (
+      filters.NomPere &&
+      !enfant.NomPere?.toLowerCase().includes(filters.NomPere.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par domicile
+    if (
+      filters.Domicile &&
+      !enfant.Domicile?.toLowerCase().includes(filters.Domicile.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par Fokotany
+    if (
+      filters.Fokotany &&
+      !enfant.Fokotany?.toLowerCase().includes(filters.Fokotany.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par Hameau
+    if (
+      filters.Hameau &&
+      !enfant.Hameau?.toLowerCase().includes(filters.Hameau.toLowerCase())
+    ) {
+      return false;
+    }
+    // Filtrer par téléphone
+    if (
+      filters.Telephone &&
+      !enfant.Telephone?.includes(filters.Telephone)
+    ) {
+      return false;
+    }
+
+    // Filtrer par âge minimum
+    if (filters.age_min) {
+      const age = calculateAge(enfant.date_naissance);
+      if (age < parseInt(filters.age_min)) {
+        return false;
+      }
+    }
+
+    // Filtrer par âge maximum
+    if (filters.age_max) {
+      const age = calculateAge(enfant.date_naissance);
+      if (age > parseInt(filters.age_max)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Gestion de la pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Gestion des clics pour afficher les détails
   const handleDetailsClick = (enfant: any) => {
     setSelectedChild(enfant);
     setShowPopup(true);
   };
 
+  // Fermeture de la popup
   const closePopup = () => {
     setShowPopup(false);
-    setSelectedChild(null);
   };
 
-  const calculateAge = (dateString: string) => {
+  // Fonction pour imprimer le carnet de santé d'un enfant
+  const handlePrint = useReactToPrint({
+    documentTitle: "Carnet de santé",
+    // @ts-ignore - La propriété content existe bien dans react-to-print mais TypeScript ne la reconnaît pas correctement
+    content: () => printRef.current,
+    onBeforeGetContent: async () => Promise.resolve(),
+    onAfterPrint: () => setShowPrintPreview(false),
+    removeAfterPrint: true
+  });
+  
+  // Fonction pour imprimer la liste des personnes
+  const handleListPrint = useReactToPrint({
+    documentTitle: "Liste des personnes",
+    // @ts-ignore
+    content: () => listPrintRef.current,
+    onBeforeGetContent: async () => Promise.resolve(),
+    onAfterPrint: () => setShowListPrintPreview(false),
+    removeAfterPrint: true
+  });
+  
+  // Fonction pour générer et télécharger le PDF d'un enfant
+  const handleDownloadPDF = () => {
+    if (!printRef.current) return;
+    
+    const element = printRef.current;
+    const filename = selectedChildData ? 
+      `carnet-sante-${selectedChildData.Nom?.replace(/\s/g, '-').toLowerCase() || ''}-${selectedChildData.Prenom?.replace(/\s/g, '-').toLowerCase() || ''}.pdf` : 
+      'carnet-sante.pdf';
+    
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as 'portrait' }
+    };
+    
+    // Afficher un message de chargement
+    setPrintLoading(true);
+    
+    // Utiliser setTimeout pour permettre à l'UI de se mettre à jour avant de lancer le processus de génération du PDF
+    setTimeout(() => {
+      html2pdf()
+        .from(element)
+        .set(opt)
+        .save()
+        .then(() => {
+          setPrintLoading(false);
+        })
+        .catch((error) => {
+          console.error('Erreur lors de la génération du PDF:', error);
+          setPrintLoading(false);
+        });
+    }, 100);
+  };
+  
+  // Fonction pour générer et télécharger le PDF de la liste
+  const handleListDownloadPDF = () => {
+    if (!listPrintRef.current) return;
+    
+    const element = listPrintRef.current;
+    const activeFilters = [];
+    if (filters.Nom) activeFilters.push(filters.Nom);
+    if (filters.Prenom) activeFilters.push(filters.Prenom);
+    if (filters.Fokotany) activeFilters.push(filters.Fokotany);
+    if (filters.Hameau) activeFilters.push(filters.Hameau);
+    
+    let filename = 'liste-personnes';
+    if (activeFilters.length) {
+      filename += '-' + activeFilters.join('-').toLowerCase().replace(/\s/g, '-');
+    }
+    filename += '.pdf';
+    
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' as 'landscape' }
+    };
+    
+    // Afficher un message de chargement
+    setListPrintLoading(true);
+    
+    setTimeout(() => {
+      html2pdf()
+        .from(element)
+        .set(opt)
+        .save()
+        .then(() => {
+          setListPrintLoading(false);
+        })
+        .catch((error) => {
+          console.error('Erreur lors de la génération du PDF de la liste:', error);
+          setListPrintLoading(false);
+        });
+    }, 100);
+  };
+
+  // Fonction pour charger les données de l'enfant pour l'impression
+  const fetchChildData = async (childId: string | number) => {
+    setPrintLoading(true);
+    try {
+      // Récupérer les données de l'enfant
+      const childResponse = await axios.get(`http://localhost:3000/api/enfants/${childId}`);
+      setSelectedChildData(childResponse.data);
+      
+      // Récupérer les vaccinations de l'enfant
+      const vaccinationsResponse = await axios.get(`http://localhost:3000/api/vaccinations/child?enfant_id=${childId}`);
+      setChildVaccines(vaccinationsResponse.data);
+      
+      // Pour chaque vaccin, récupérer ses rappels
+      const rappelsMap: {[key: string]: Rappel[]} = {};
+      const administeredMap: {[key: string]: boolean[]} = {};
+      
+      for (const vaccine of vaccinationsResponse.data) {
+        try {
+          const rappelsResponse = await axios.get(`http://localhost:3000/api/vaccins/${vaccine.vaccin_id}/rappels`);
+          rappelsMap[vaccine.id] = rappelsResponse.data;
+          
+          // Initialiser les rappels administrés
+          administeredMap[vaccine.id] = Array(rappelsResponse.data.length).fill(false);
+          
+          // Vérifier pour chaque rappel s'il a été administré
+          for (let i = 0; i < rappelsResponse.data.length; i++) {
+            try {
+              const checkResponse = await axios.get(
+                `http://localhost:3000/api/vaccinations/check-rappel?enfant_id=${childId}&vaccin_id=${vaccine.vaccin_id}&rappel_id=${i}`
+              );
+              if (checkResponse.data) {
+                administeredMap[vaccine.id][i] = checkResponse.data.administered;
+              }
+            } catch (err) {
+              console.error(`Erreur lors de la vérification du rappel:`, err);
+            }
+          }
+        } catch (err) {
+          console.error(`Erreur lors du chargement des rappels:`, err);
+        }
+      }
+      
+      setVaccineRappels(rappelsMap);
+      setAdministeredRappels(administeredMap);
+      setShowPrintPreview(true);
+      
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données:", error);
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
+  // Fonction pour calculer l'âge
+  const calculateAge = (dateString: string): number => {
     const today = new Date();
     const birthDate = new Date(dateString);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDifference = today.getMonth() - birthDate.getMonth();
+    
     if (
       monthDifference < 0 ||
       (monthDifference === 0 && today.getDate() < birthDate.getDate())
     ) {
       age--;
     }
+    
     return age;
   };
 
-  const filteredData = data.filter((enfant: any) => {
-    return Object.keys(filters).every((key) => {
-      // On ignore le filtre vaccin_id car on l'utilise déjà pour l'appel API
-      if (key === "vaccin_id") return true;
-      if (filters[key as keyof typeof filters] === "") return true;
-      if (key === "age_min" || key === "age_max") {
-        const age = calculateAge(enfant.date_naissance);
-        if (key === "age_min" && age < Number(filters[key as keyof typeof filters]))
-          return false;
-        if (key === "age_max" && age > Number(filters[key as keyof typeof filters]))
-          return false;
-        return true;
-      }
-      // Si c'est la propriété booléenne show_not_vaccinated, on l'ignore pour le filtrage local
-      // car elle est déjà prise en compte dans la requête API
-      if (key === 'show_not_vaccinated') return true;
-      
-      // Pour les autres propriétés (qui sont des chaînes)
-      const filterValue = filters[key as keyof typeof filters];
-      if (typeof filterValue === 'string') {
-        return String(enfant[key])
-          .toLowerCase()
-          .includes(filterValue.toLowerCase());
-      }
-      return true;
-    });
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-  
-  // Référence pour le contenu à imprimer
-  const printContentRef = useRef<HTMLDivElement>(null);
-  
   // Fonction pour obtenir un résumé des filtres actifs
   const getActiveFiltersText = () => {
-    const activeFilters: string[] = [];
-    
+    const activeFilters = [];
+
     if (filters.Nom) activeFilters.push(`Nom: ${filters.Nom}`);
     if (filters.Prenom) activeFilters.push(`Prénom: ${filters.Prenom}`);
-    if (filters.CODE) activeFilters.push(`CODE: ${filters.CODE}`);
-    if (filters.date_naissance) activeFilters.push(`Date de naissance: ${filters.date_naissance}`);
-    if (filters.SEXE) activeFilters.push(`Sexe: ${filters.SEXE}`);
-    if (filters.NomMere) activeFilters.push(`Nom de la mère: ${filters.NomMere}`);
-    if (filters.NomPere) activeFilters.push(`Nom du père: ${filters.NomPere}`);
+    if (filters.CODE) activeFilters.push(`Code: ${filters.CODE}`);
+    if (filters.SEXE) activeFilters.push(`Sexe: ${filters.SEXE === "M" ? "Garçon" : "Fille"}`);
+    if (filters.NomMere) activeFilters.push(`Nom mère: ${filters.NomMere}`);
+    if (filters.NomPere) activeFilters.push(`Nom père: ${filters.NomPere}`);
     if (filters.Domicile) activeFilters.push(`Domicile: ${filters.Domicile}`);
     if (filters.Fokotany) activeFilters.push(`Fokotany: ${filters.Fokotany}`);
     if (filters.Hameau) activeFilters.push(`Hameau: ${filters.Hameau}`);
     if (filters.Telephone) activeFilters.push(`Téléphone: ${filters.Telephone}`);
-    if (filters.age_min) activeFilters.push(`Âge minimum: ${filters.age_min} ans`);
-    if (filters.age_max) activeFilters.push(`Âge maximum: ${filters.age_max} ans`);
-    if (filters.vaccin_id) {
-      // On ajoute les infos sur le vaccin sélectionné
-      const vaccinInfo = `Vaccin: ID ${filters.vaccin_id}`;
-      if (filters.show_not_vaccinated) {
-        activeFilters.push(`${vaccinInfo} (Enfants NON vaccinés)`);
-      } else if (filters.rappel_count !== null) {
-        activeFilters.push(`${vaccinInfo} (${filters.rappel_count} rappels)`);
-      } else {
-        activeFilters.push(`${vaccinInfo} (Enfants vaccinés)`);
-      }
-    }
-    
-    return activeFilters.length > 0 
-      ? `Filtres appliqués: ${activeFilters.join(", ")}` 
-      : "Aucun filtre appliqué";
-  };
-  
-  // Fonction pour imprimer la liste des enfants
-  const handlePrint = () => {
-    // Créer une nouvelle fenêtre d'impression
-    const printWindow = window.open('', '', 'width=800,height=600');
-    
-    if (!printWindow) {
-      alert("Veuillez autoriser les fenêtres popup pour imprimer.");
-      return;
-    }
-    
-    // Date actuelle formatée
-    const currentDate = format(new Date(), "dd/MM/yyyy à HH:mm");
-    
-    // Préparer le contenu HTML à imprimer
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Liste des enfants - CSB</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 20px;
-              color: #333;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 20px;
-              padding-bottom: 10px;
-              border-bottom: 1px solid #ddd;
-            }
-            .filters {
-              background-color: #f9f9f9;
-              padding: 10px;
-              border-radius: 4px;
-              margin-bottom: 20px;
-              border: 1px solid #eee;
-              font-size: 12px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 20px;
-              border: 2px solid #333;
-            }
-            th, td {
-              border: 1px solid #333;
-              padding: 8px 12px;
-              text-align: left;
-            }
-            th {
-              background-color: #f5f5f5;
-              font-weight: bold;
-            }
-            tr:nth-child(even) {
-              background-color: #f9f9f9;
-            }
-            .footer {
-              font-size: 12px;
-              text-align: center;
-              margin-top: 20px;
-              color: #666;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>Liste des enfants</h2>
-            <p>CSB - Centre de Santé de Base</p>
-            <p>Imprimé le ${currentDate}</p>
-          </div>
-          
-          <div class="filters">
-            ${getActiveFiltersText()}
-          </div>
-          
-          <table>
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>Date de Naissance</th>
-                <th>Sexe</th>
-                <th>Domicile</th>
-                <th>Fokotany</th>
-                <th>Hameau</th>
-              </tr>
-            </thead>
-            <tbody>
-    `);
-    
-    // Ajouter toutes les données (pas juste la page courante)
-    filteredData.forEach((enfant: any) => {
-      printWindow.document.write(`
-        <tr>
-          <td>${enfant.Nom || ''}</td>
-          <td>${enfant.Prenom || ''}</td>
-          <td>${enfant.date_naissance ? new Date(enfant.date_naissance).toLocaleDateString() : ''}</td>
-          <td>${enfant.SEXE || ''}</td>
-          <td>${enfant.Domicile || ''}</td>
-          <td>${enfant.Fokotany || ''}</td>
-          <td>${enfant.Hameau || ''}</td>
-        </tr>
-      `);
-    });
-    
-    printWindow.document.write(`
-            </tbody>
-          </table>
-          
-          <div class="footer">
-            <p>Nombre total d'enfants: ${filteredData.length}</p>
-          </div>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    
-    // Déclencher l'impression
-    setTimeout(() => {
-      printWindow.print();
-      // printWindow.close();
-    }, 500);
+    if (filters.age_min) activeFilters.push(`Âge min: ${filters.age_min} ans`);
+    if (filters.age_max) activeFilters.push(`Âge max: ${filters.age_max} ans`);
+
+    return activeFilters.length ? activeFilters.join(", ") : "Aucun filtre actif";
   };
 
   return (
-    <div className="p-6 flex flex-col items-center pt-[70px] overflow-y-auto w-full relative transition-all duration-300">
-      {loading ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-xl p-6 text-center mx-auto bg-white rounded-lg">
-          <CardHeader>
-            <Loader2 className="w-12 h-12 text-gray-500 animate-spin mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <CardTitle className="text-gray-800 text-lg font-semibold">
-              Chargement en cours...
-            </CardTitle>
-            <p className="text-gray-600 text-sm">Veuillez patienter.</p>
-          </CardContent>
-        </Card>
-      ) : data.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center w-full max-w-xl p-6 text-center mx-auto bg-white rounded-lg">
-          <CardHeader>
-            <AlertCircle className="w-12 h-12 text-gray-500 mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <CardTitle className="text-gray-800 text-lg font-semibold">
-              Aucun enfant trouvé
-            </CardTitle>
-            <p className="text-gray-600 text-sm">
-              Ajoutez un nouvel enfant pour commencer.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="flex justify-between items-center w-full max-w-6xl mb-4 mx-auto">
-            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <Users className="text-primary" size={20} />
-              Liste des personnes <span className="text-sm font-normal text-gray-500 ml-2">({filteredData.length} résultats)</span>
-            </h2>
+    <div className="container mx-auto px-4 py-6">
+      {/* En-tête avec titre et bouton de filtre */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Liste des personnes</h2>
+          <p className="text-gray-500 text-sm">
+            {filteredData.length} personnes trouvées • {getActiveFiltersText()}
+          </p>
+        </div>
+        <div className="flex flex-col md:flex-row gap-2">
+          <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={handlePrint}
-              className="flex items-center gap-2 text-sm bg-white hover:bg-gray-50 text-primary border border-primary/30 hover:border-primary transition-colors"
+              className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+              onClick={() => setShowListPrintPreview(true)}
             >
-              <Printer size={16} />
-              Imprimer la liste
+              <Printer className="h-4 w-4 mr-1" /> Imprimer la liste
+            </Button>
+            <Button
+              className="mt-3 md:mt-0 bg-white text-gray-800 border hover:bg-gray-50"
+              onClick={() => setIsFilterOpen(true)}
+            >
+              Filtrer la liste
             </Button>
           </div>
-          
-          <div className="mb-8 w-full">
-            <div className="overflow-hidden w-full max-w-6xl mx-auto">
-              <CardHeader className="bg-white pb-3">
-                <div className="text-sm text-gray-500">Cliquez sur une ligne pour voir les détails</div>
-              </CardHeader>
+        </div>
+      </div>
+
+      {/* Liste des enfants */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col">
+            <div className="overflow-auto">
               <CardContent className="p-0">
-                <div className="overflow-x-auto w-full">
-                  <Table className="w-full min-w-[800px]">
+                <div className="overflow-hidden border rounded-lg">
+                  <Table className="w-full max-w-[95%] mx-auto">
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead className="font-semibold whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-primary" />
-                            Nom
-                          </div>
-                        </TableHead>
-                        <TableHead className="font-semibold whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <UserPlus className="h-4 w-4 text-primary" />
-                            Prénom
-                          </div>
-                        </TableHead>
-                        <TableHead className="font-semibold whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-primary" />
-                            Date de Naissance
-                          </div>
-                        </TableHead>
-                        <TableHead className="font-semibold whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Home className="h-4 w-4 text-primary" />
-                            Domicile
-                          </div>
-                        </TableHead>
-                        <TableHead className="font-semibold whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Info className="h-4 w-4 text-primary" />
-                            Actions
-                          </div>
-                        </TableHead>
+                      <TableRow>
+                        <TableHead className="w-[22%] py-3 px-4">Nom</TableHead>
+                        <TableHead className="w-[18%] py-3 px-4">Prénom</TableHead>
+                        <TableHead className="w-[20%] py-3 px-4">Date de naissance</TableHead>
+                        <TableHead className="w-[30%] py-3 px-4">Adresse</TableHead>
+                        <TableHead className="w-[10%] py-3 px-4 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -404,6 +495,7 @@ export default function ChildList() {
                           enfant={enfant}
                           isEven={index % 2 === 0}
                           onDetailsClick={handleDetailsClick}
+                          onPrintClick={fetchChildData}
                         />
                       ))}
                     </TableBody>
@@ -448,10 +540,110 @@ export default function ChildList() {
         setIsFilterOpen={setIsFilterOpen}
       />
 
-      <Dialog open={showPopup} onOpenChange={setShowPopup}>
-        {selectedChild && (
-          <ChildDetailsPopup enfant={selectedChild} onClose={closePopup} />
-        )}
+      {/* Utilisation du composant ChildDetailsPopup directement car il a sa propre modale */}
+      {showPopup && selectedChild && (
+        <ChildDetailsPopup enfant={selectedChild} onClose={closePopup} />
+      )}
+
+      {/* Modal pour l'aperçu d'impression d'une personne */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          <div className="flex flex-col p-3 py-4 space-y-1">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <Printer className="h-5 w-5" />
+              Aperçu d'impression - Carnet de santé
+            </h3>
+          </div>
+          
+          <ScrollArea className="max-h-[70vh] overflow-auto border-t border-b border-gray-200">
+            {printLoading ? (
+              <div className="flex flex-col items-center justify-center p-8">
+                <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+                <p className="mt-2 text-gray-600">Chargement des données...</p>
+              </div>
+            ) : (
+              selectedChildData && (
+                <ChildPrintView 
+                  enfant={selectedChildData}
+                  vaccines={childVaccines}
+                  vaccineRappels={vaccineRappels}
+                  administeredRappels={administeredRappels}
+                  printRef={printRef}
+                />
+              )
+            )}
+          </ScrollArea>
+          
+          <div className="flex justify-end gap-2 p-4">
+            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
+              Fermer
+            </Button>
+            <Button 
+              onClick={handleDownloadPDF} 
+              disabled={printLoading || !selectedChildData}
+              className="bg-green-500 text-white hover:bg-green-600"
+            >
+              <Download className="h-4 w-4 mr-1" /> Télécharger PDF
+            </Button>
+            <Button 
+              onClick={handlePrint} 
+              disabled={printLoading || !selectedChildData}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              <Printer className="h-4 w-4 mr-1" /> Imprimer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal pour l'aperçu d'impression de la liste filtrée */}
+      <Dialog open={showListPrintPreview} onOpenChange={setShowListPrintPreview}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
+          <div className="flex flex-col p-3 py-4 space-y-1">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <Printer className="h-5 w-5" />
+              Aperçu d'impression - Liste des personnes
+            </h3>
+            <p className="text-sm text-gray-500">
+              {filteredData.length} personnes trouvées • {getActiveFiltersText()}
+            </p>
+          </div>
+          
+          <ScrollArea className="max-h-[70vh] overflow-auto border-t border-b border-gray-200">
+            {listPrintLoading ? (
+              <div className="flex flex-col items-center justify-center p-8">
+                <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+                <p className="mt-2 text-gray-600">Préparation de la liste...</p>
+              </div>
+            ) : (
+              <ListPrintView 
+                children={filteredData} 
+                filters={filters} 
+                printRef={listPrintRef} 
+              />
+            )}
+          </ScrollArea>
+          
+          <div className="flex justify-end gap-2 p-4">
+            <Button variant="outline" onClick={() => setShowListPrintPreview(false)}>
+              Fermer
+            </Button>
+            <Button 
+              onClick={handleListDownloadPDF} 
+              disabled={listPrintLoading || filteredData.length === 0}
+              className="bg-green-500 text-white hover:bg-green-600"
+            >
+              <Download className="h-4 w-4 mr-1" /> Télécharger PDF
+            </Button>
+            <Button 
+              onClick={handleListPrint} 
+              disabled={listPrintLoading || filteredData.length === 0}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              <Printer className="h-4 w-4 mr-1" /> Imprimer
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );
