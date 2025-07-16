@@ -66,7 +66,7 @@ function LoginForm() {
         console.log("🟢 Token reçu :", data.token);
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        login(data.token, data.user);
+        login(data.token);
         navigate("/Dashboard");
       } else {
         setError(data.message || "Une erreur est survenue.");
@@ -84,8 +84,8 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <form onSubmit={handleSubmit} className="w-full max-w-md">
-        <Card className="bg-white shadow-lg rounded-xl border border-gray-200">
-          <CardHeader className="bg-gray-50 rounded-t-xl border-b border-gray-200">
+        <div>
+          <CardHeader className="rounded-t-xl">
             <CardTitle className="text-2xl font-bold text-gray-800 text-center flex items-center justify-center gap-2">
               <FaUser className="text-gray-600" /> Connexion
             </CardTitle>
@@ -111,7 +111,7 @@ function LoginForm() {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="pl-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-400 hover:border-gray-500 rounded-lg shadow-sm"
+                  className="pl-10 h-12 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-400 hover:border-gray-500 rounded-full"
                   placeholder="Entrez votre nom d'utilisateur"
                   required
                 />
@@ -133,7 +133,7 @@ function LoginForm() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`pl-10 pr-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-400 hover:border-gray-500 rounded-lg shadow-sm ${!isPasswordValid && formData.password ? 'border-red-500' : ''}`}
+                  className={`pl-10 pr-10 h-12 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-400 hover:border-gray-500 rounded-full ${!isPasswordValid && formData.password ? 'border-red-500' : ''}`}
                   placeholder="Entrez votre mot de passe"
                   required
                 />
@@ -143,7 +143,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none rounded-full"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
@@ -152,10 +152,10 @@ function LoginForm() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-4 p-6 bg-gray-50 rounded-b-xl border-t border-gray-200">
+          <CardFooter className="flex flex-col space-y-4 p-6 rounded-b-xl">
             <Button 
               type="submit" 
-              className="w-full bg-gray-700 text-white hover:bg-gray-800 transition-colors rounded-lg shadow-md flex items-center justify-center gap-2"
+              className="w-full h-12 bg-gray-700 text-white hover:bg-gray-800 transition-colors rounded-full flex items-center justify-center gap-2"
             >
               Connexion
               <FaArrowRight />
@@ -168,7 +168,7 @@ function LoginForm() {
               </Link>
             </p>
           </CardFooter>
-        </Card>
+        </div>
       </form>
     </div>
   );

@@ -270,7 +270,10 @@ export default function ChildHistory() {
     <div className="p-4">
       <div>
         <CardHeader className="flex justify-between items-center">
-          <CardTitle className="text-xl font-bold">Historique des modifications</CardTitle>
+           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-gray-800 flex items-center gap-2">
+                Historique des modifications
+          </h1>
+          <div className="w-full border-t border-gray-200 my-6"></div>
           {error && (
             <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
               Mode hors ligne

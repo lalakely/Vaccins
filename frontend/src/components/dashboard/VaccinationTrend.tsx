@@ -71,7 +71,7 @@ function VaccinationTrend() {
     <Card>
       <CardHeader>
         <CardTitle>Évolution des Vaccinations</CardTitle>
-        <CardDescription>Nombre de vaccinations par mois</CardDescription>
+        <CardDescription>Nombre de vaccinations par jour</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -90,11 +90,11 @@ function VaccinationTrend() {
             >
               <CartesianGrid vertical={false} />
               <XAxis
-                dataKey="month"
+                dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tickFormatter={(value) => value.slice(0, 3)} // Abrège le mois (ex. : "Jan")
+                tickFormatter={(value) => value.toLocaleString("default", { day: "numeric" })}
               />
               <YAxis />
               <ChartTooltip
@@ -119,7 +119,7 @@ function VaccinationTrend() {
               Tendance des vaccinations <TrendingUp className="h-4 w-4" />
             </div>
             <div className="flex items-center gap-2 leading-none text-muted-foreground">
-              Données agrégées par mois
+              Données agrégées par jour
             </div>
           </div>
         </div>
