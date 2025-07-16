@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/table";
 import { 
   CheckCircle,
-  Clock,
-  AlertTriangle
+  Clock
 } from "lucide-react";
 
 // Interfaces

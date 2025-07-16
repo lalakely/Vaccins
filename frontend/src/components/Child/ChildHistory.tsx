@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ApiService from "@/utils/apiService";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -11,7 +11,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   AlertCircle,
@@ -23,6 +23,7 @@ import {
   Plus,
   Edit,
   Trash,
+  Printer
 } from "lucide-react";
 import {
   Dialog,
@@ -32,6 +33,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useReactToPrint } from "react-to-print";
+import ChildPrintView from "./ChildPrintView";
 
 // Interface pour les entrées d'historique
 interface HistoryItem {
@@ -46,6 +49,39 @@ interface HistoryItem {
   Prenom: string | null;
   username: string | null;
   history_type: 'regular' | 'deletion';
+}
+
+// Interface pour les vaccins
+interface Vaccine {
+  id: string;
+  vaccin_id: string;
+  Nom: string;
+  name: string;
+  date_vaccination: string;
+}
+
+// Interface pour les rappels
+interface Rappel {
+  delai: number;
+  description: string;
+  id?: string;
+  vaccin_id?: string;
+}
+
+// Interface pour l'enfant
+interface Child {
+  ID?: string;
+  Nom: string;
+  Prenom: string;
+  CODE?: string;
+  date_naissance: string;
+  SEXE: string;
+  NomMere?: string;
+  NomPere?: string;
+  Domicile?: string;
+  Fokotany?: string;
+  Hameau?: string;
+  Telephone?: string;
 }
 
 // Interface pour les changements détectés
@@ -64,6 +100,17 @@ export default function ChildHistory() {
   const [selectedHistory, setSelectedHistory] = useState<HistoryItem | null>(null);
   // Plus de mode de démonstration - utiliser uniquement l'API réelle
   const itemsPerPage = 10;
+  
+  // États pour l'impression
+  const [selectedChildData, setSelectedChildData] = useState<Child | null>(null);
+  const [childVaccines, setChildVaccines] = useState<Vaccine[]>([]);
+  const [vaccineRappels, setVaccineRappels] = useState<{[key: string]: Rappel[]}>({});
+  const [administeredRappels, setAdministeredRappels] = useState<{[key: string]: boolean[]}>({});
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [printLoading, setPrintLoading] = useState(false);
+  
+  // Référence pour l'impression
+  const printRef = useRef<HTMLDivElement>(null);
   
   // Accès au système de notifications
   const { addNotification } = useNotification();
@@ -266,6 +313,78 @@ export default function ChildHistory() {
     setCurrentPage(page);
   };
 
+  // Fonction pour imprimer le rapport
+  const handlePrint = useReactToPrint({
+    documentTitle: "Carnet de santé",
+    // @ts-ignore - La propriété content existe bien dans react-to-print mais TypeScript ne la reconnaît pas correctement
+    content: () => printRef.current,
+    onBeforeGetContent: async () => Promise.resolve(),
+    onAfterPrint: () => setShowPrintPreview(false),
+    removeAfterPrint: true
+  });
+
+  // Fonction pour charger les données de l'enfant
+  const fetchChildData = async (childId: number) => {
+    setPrintLoading(true);
+    try {
+      // Récupérer les données de l'enfant
+      const childResponse = await ApiService.get(`/api/enfants/${childId}`);
+      setSelectedChildData(childResponse.data);
+      
+      // Récupérer les vaccinations de l'enfant
+      const vaccinationsResponse = await ApiService.get(`/api/vaccinations/child?enfant_id=${childId}`);
+      setChildVaccines(vaccinationsResponse.data);
+      
+      // Pour chaque vaccin, récupérer ses rappels
+      const rappelsMap: {[key: string]: Rappel[]} = {};
+      const administeredMap: {[key: string]: boolean[]} = {};
+      
+      for (const vaccine of vaccinationsResponse.data) {
+        try {
+          const rappelsResponse = await ApiService.get(`/api/vaccins/${vaccine.vaccin_id}/rappels`);
+          rappelsMap[vaccine.id] = rappelsResponse.data;
+          
+          // Initialiser les rappels administrés
+          administeredMap[vaccine.id] = Array(rappelsResponse.data.length).fill(false);
+          
+          // Vérifier pour chaque rappel s'il a été administré
+          for (let i = 0; i < rappelsResponse.data.length; i++) {
+            try {
+              const checkResponse = await ApiService.get(
+                `/api/vaccinations/check-rappel?enfant_id=${childId}&vaccin_id=${vaccine.vaccin_id}&rappel_id=${i}`
+              );
+              if (checkResponse.data) {
+                administeredMap[vaccine.id][i] = checkResponse.data.administered;
+              }
+            } catch (err) {
+              console.error(`Erreur lors de la vérification du rappel:`, err);
+            }
+          }
+        } catch (err) {
+          console.error(`Erreur lors du chargement des rappels:`, err);
+        }
+      }
+      
+      setVaccineRappels(rappelsMap);
+      setAdministeredRappels(administeredMap);
+      setShowPrintPreview(true);
+      
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données:", error);
+      addNotification({
+        id: Date.now(),
+        title: "Erreur",
+        message: "Impossible de récupérer les informations de l'enfant.",
+        type: "error",
+        category: "system",
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
   return (
     <div className="p-4">
       <div>
@@ -316,13 +435,29 @@ export default function ChildHistory() {
                   <TableBody>
                     {currentItems.map((history) => {
                       const childName = `${history.Nom || ""} ${history.Prenom || ""}`.trim() || "Inconnu";
-                      
+                       
                       return (
                         <TableRow key={history.id}>
                           <TableCell className="font-medium">
                             {formatDate(history.action_date)}
                           </TableCell>
-                          <TableCell>{childName}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-between">
+                              <span>{childName}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  fetchChildData(history.child_id);
+                                }}
+                                className="h-8 w-8 p-0"
+                                title="Imprimer les informations de cette personne"
+                              >
+                                <Printer className="h-4 w-4 text-gray-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
                           <TableCell>{getActionBadge(history.action_type)}</TableCell>
                           <TableCell>{history.username || "Système"}</TableCell>
                           <TableCell className="text-right">
@@ -509,6 +644,50 @@ export default function ChildHistory() {
               </div>
             </ScrollArea>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal pour l'aperçu d'impression */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 py-4">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Printer className="h-5 w-5" />
+              Aperçu d'impression
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[70vh] overflow-auto border-t border-b border-gray-200">
+            {printLoading ? (
+              <div className="flex flex-col items-center justify-center p-8">
+                <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+                <p className="mt-2 text-gray-600">Chargement des données...</p>
+              </div>
+            ) : (
+              selectedChildData && (
+                <ChildPrintView 
+                  enfant={selectedChildData}
+                  vaccines={childVaccines}
+                  vaccineRappels={vaccineRappels}
+                  administeredRappels={administeredRappels}
+                  printRef={printRef}
+                />
+              )
+            )}
+          </ScrollArea>
+          
+          <div className="flex justify-end gap-2 p-4">
+            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
+              Fermer
+            </Button>
+            <Button 
+              onClick={handlePrint} 
+              disabled={printLoading || !selectedChildData}
+              className="bg-blue-500 text-white hover:bg-blue-600"
+            >
+              <Printer className="h-4 w-4 mr-1" /> Imprimer
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
