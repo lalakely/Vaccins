@@ -80,17 +80,22 @@ function NavBar() {
 
         {/* Dropdown déconnexion avec animation */}
         <div
-          className={`absolute right-0 mt-2 w-48 bg-white rounded-lg border border-gray-100 transition-all duration-300 ease-in-out transform z-[var(--z-index-navbar)] ${
+          className={`absolute right-0 mt-6 w-52 bg-white rounded-xl border border-gray-200 transition-all duration-300 ease-in-out transform z-[var(--z-index-navbar)] top-7 ${
             isDropdownOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"
           }`}
         >
-          <div className="p-3 border-b border-gray-100">
-            <p className="text-xs text-gray-500">Connecté en tant que</p>
-            <p className="font-medium text-gray-800">{username || "Utilisateur"}</p>
+          <div className="p-4 border-b border-gray-100">
+            <p className="text-xs text-gray-500 mb-1">Connecté en tant que</p>
+            <p className="font-medium text-gray-800 flex items-center gap-2">
+              <span className="bg-primary/10 text-primary p-1 rounded-full">
+                <FaRegUser size={12} />
+              </span>
+              {username || "Utilisateur"}
+            </p>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-3 flex items-center gap-2 text-red-600 hover:bg-gray-50 transition-all rounded-b-lg"
+            className="w-full text-left px-5 py-3.5 flex items-center gap-3 text-red-600 hover:bg-gray-50 transition-all rounded-b-xl"
           >
             <FaSignOutAlt size={16} /> 
             <span className="font-medium">Déconnexion</span>
