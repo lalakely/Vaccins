@@ -178,6 +178,11 @@ export default function FokotanyAdd() {
                 setFormData({ Nom: '', px: '', py: '' });
                 setPosition(null); // Réinitialise la position du marqueur
                 setIsDialogOpen(false);
+                
+                // Rafraîchir la page après l'ajout
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
                 const errorData = await response.json();
                 throw new Error(errorData.message || "Une erreur est survenue");

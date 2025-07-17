@@ -444,18 +444,6 @@ export default function ChildHistory() {
                           <TableCell>
                             <div className="flex items-center justify-between">
                               <span>{childName}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  fetchChildData(history.child_id);
-                                }}
-                                className="h-8 w-8 p-0"
-                                title="Imprimer les informations de cette personne"
-                              >
-                                <Printer className="h-4 w-4 text-gray-600" />
-                              </Button>
                             </div>
                           </TableCell>
                           <TableCell>{getActionBadge(history.action_type)}</TableCell>

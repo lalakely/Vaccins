@@ -11,10 +11,6 @@ interface HameauCardProps {
   className?: string; // Pour personnalisation externe
 }
 
-interface ChildrenStat {
-  count: number;
-}
-
 export default function HameauCard({ hameau, onDetailsClick, className }: HameauCardProps) {
   const [childrenCount, setChildrenCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);

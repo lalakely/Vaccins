@@ -389,7 +389,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
             <button
               onClick={handleDelete}
               disabled={loading}
-              className="flex items-center gap-2 bg-red-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-600 transition disabled:opacity-50"
+              className="flex items-center gap-2 bg-red-500 text-white font-semibold px-4 py-2 hover:bg-red-600 transition disabled:opacity-50 rounded-full"
             >
               <TrashIcon className="h-5 w-5" />
               {loading ? "Suppression..." : "Supprimer le vaccin"}

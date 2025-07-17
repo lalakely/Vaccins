@@ -11,9 +11,6 @@ interface FokotanyCardProps {
   className?: string; // Pour personnalisation externe
 }
 
-interface ChildrenStat {
-  count: number;
-}
 
 export default function FokotanyCard({ fokotany, onDetailsClick, className }: FokotanyCardProps) {
   const [childrenCount, setChildrenCount] = useState<number>(0);

@@ -365,7 +365,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 bg-blue-500 text-white font-semibold hover:bg-blue-600 transition">
+        <Button className="flex items-center gap-2 bg-blue-500 text-white font-semibold px-4 py-5 hover:bg-blue-600 transition disabled:opacity-50 rounded-full">
           <PencilIcon className="h-5 w-5" />
           Modifier le vaccin
         </Button>
@@ -626,7 +626,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
                           <button
                             type="button"
                             onClick={() => handleRemoveRappel(index)}
-                            className="text-red-500 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-sm rounded-full"
                           >
                             Supprimer
                           </button>

@@ -87,7 +87,7 @@ function LoginForm() {
         <div>
           <CardHeader className="rounded-t-xl">
             <CardTitle className="text-2xl font-bold text-gray-800 text-center flex items-center justify-center gap-2">
-              <FaUser className="text-gray-600" /> Connexion
+              Connexion
             </CardTitle>
           </CardHeader>
 

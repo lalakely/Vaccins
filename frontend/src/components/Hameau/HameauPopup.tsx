@@ -246,21 +246,9 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
   };
 
   return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            <div className="flex items-center gap-2">
-              <MapIcon className="h-6 w-6 text-green-500" />
-              <span>Détails du Hameau: {hameau.Nom}</span>
-              {!apiAvailable && (
-                <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-1 text-xs">
-                  <WifiOff className="h-3 w-3" /> Mode démo
-                </Badge>
-              )}
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+    <div>
+      <div>
+        
         
         <div className="p-6 sm:p-8 flex flex-col gap-8">
           {/* Ligne 1 - Informations et graphique de pourcentage */}
@@ -302,7 +290,7 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors rounded-full"
                 >
                   <TrashIcon className="h-5 w-5" />
                   {loading ? "Suppression..." : "Supprimer"}
@@ -370,8 +358,8 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
             />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 

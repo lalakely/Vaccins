@@ -303,9 +303,7 @@ export default function AddVaccine() {
                                             placeholder="Entrez le nombre de jours"
                                             className={formStyles.input}
                                         />
-                                        <span className={formStyles.inputIcon}>
-                                            <span className="text-sm font-medium">Jours</span>
-                                        </span>
+                                       
                                     </div>
                                 </div>
 

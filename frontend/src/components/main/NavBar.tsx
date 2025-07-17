@@ -95,7 +95,7 @@ function NavBar() {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full text-left px-5 py-3.5 flex items-center gap-3 text-red-600 hover:bg-gray-50 transition-all rounded-b-xl"
+            className="w-full text-left px-5 py-3.5 flex items-center gap-3 text-red-600 hover:bg-gray-50 transition-all rounded-full"
           >
             <FaSignOutAlt size={16} /> 
             <span className="font-medium">Déconnexion</span>

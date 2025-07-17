@@ -44,7 +44,7 @@ export default function AddChild() {
         });
     }, []);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
@@ -75,7 +75,8 @@ export default function AddChild() {
                 });
                 setTimeout(() => {
                     setSuccessMessage("");
-                }, 3000);
+                    window.location.reload(); // Rafraîchir la page après l'ajout
+                }, 1500);
             }
         } catch (error) {
             console.error("Erreur lors de l'ajout de l'enfant :", error);
@@ -100,7 +101,7 @@ export default function AddChild() {
                 <DialogContent className="w-full max-w-4xl bg-white p-4 sm:p-6 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-blue-50 border border-blue-100">
                     <DialogHeader>
                         <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
-                            <FaUserTie className="text-gray-600" /> Ajouter un enfant
+                            <FaUserTie className="text-gray-600" /> Ajouter une personne
                         </DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2">
@@ -152,13 +153,13 @@ export default function AddChild() {
                                 </Label>
                                 <div className={formStyles.inputWrapper}>
                                     <Input 
-                                        type="number" 
+                                        type="text" 
                                         name="CODE" 
                                         value={formData.CODE} 
                                         onChange={handleChange} 
-                                        required 
                                         className={formStyles.input} 
-                                        placeholder="Entrez le code"
+                                        placeholder="Entrez le code (optionnel)"
+                                        maxLength={50}
                                     />
                                     <span className={formStyles.inputIcon}>
                                         <FaIdBadge />
@@ -178,6 +179,26 @@ export default function AddChild() {
                                         onChange={handleChange} 
                                         required 
                                         className={formStyles.input}
+                                    />
+                                    <span className={formStyles.inputIcon}>
+                                        <FaCalendarAlt />
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className={formStyles.formGroup}>
+                                <Label className={formStyles.label}>
+                                    <FaCalendarAlt className="text-gray-500" /> Âge au premier contact
+                                </Label>
+                                <div className={formStyles.inputWrapper}>
+                                    <Input 
+                                        type="number" 
+                                        name="age_premier_contact" 
+                                        value={formData.age_premier_contact} 
+                                        onChange={handleChange} 
+                                        className={formStyles.input}
+                                        placeholder="Âge au premier contact (optionnel)" 
+                                        min="0"
                                     />
                                     <span className={formStyles.inputIcon}>
                                         <FaCalendarAlt />
@@ -208,14 +229,13 @@ export default function AddChild() {
                         <div className="space-y-4">
                             <div className={formStyles.formGroup}>
                                 <Label className={formStyles.label}>
-                                    <FaHome className="text-blue-500" /> Localité
+                                    <FaHome className="text-blue-500" /> Localité (Hameau)
                                 </Label>
                                 <Select 
                                     onValueChange={(value) => setFormData({ ...formData, Hameau: value })} 
-                                    required
                                 >
                                     <SelectTrigger className={formStyles.selectTrigger}>
-                                        <SelectValue placeholder="Sélectionnez la localité" />
+                                        <SelectValue placeholder="Sélectionnez la localité (optionnel)" />
                                     </SelectTrigger>
                                     <SelectContent className={formStyles.selectContent}>
                                         {hameauList.map((h, index) => (
@@ -231,18 +251,44 @@ export default function AddChild() {
                                 </Select>
                             </div>
 
-                            <div>
-                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <div className={formStyles.formGroup}>
+                                <Label className={formStyles.label}>
                                     <FaUserTie className="text-gray-600" /> Nom de la mère
                                 </Label>
-                                <Input 
-                                    type="text" 
-                                    name="NomMere" 
-                                    value={formData.NomMere} 
-                                    onChange={handleChange} 
-                                    required 
-                                    className="mt-1 bg-white border-gray-300 hover:border-gray-500 focus:ring-gray-400 text-black rounded-lg shadow-sm" 
-                                />
+                                <div className={formStyles.inputWrapper}>
+                                    <Input 
+                                        type="text" 
+                                        name="NomMere" 
+                                        value={formData.NomMere} 
+                                        onChange={handleChange}
+                                        className={formStyles.input}
+                                        placeholder="Nom de la mère (optionnel)"
+                                        maxLength={100}
+                                    />
+                                    <span className={formStyles.inputIcon}>
+                                        <FaUserTie />
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div className={formStyles.formGroup}>
+                                <Label className={formStyles.label}>
+                                    <FaUserTie className="text-gray-600" /> Nom du père
+                                </Label>
+                                <div className={formStyles.inputWrapper}>
+                                    <Input 
+                                        type="text" 
+                                        name="NomPere" 
+                                        value={formData.NomPere} 
+                                        onChange={handleChange}
+                                        className={formStyles.input}
+                                        placeholder="Nom du père (optionnel)"
+                                        maxLength={100}
+                                    />
+                                    <span className={formStyles.inputIcon}>
+                                        <FaUserTie />
+                                    </span>
+                                </div>
                             </div>
 
                             <div className={formStyles.formGroup}>
@@ -256,10 +302,31 @@ export default function AddChild() {
                                         value={formData.Telephone} 
                                         onChange={handleChange} 
                                         className={formStyles.input}
-                                        placeholder="Entrez le numéro de téléphone" 
+                                        placeholder="Entrez le numéro de téléphone (optionnel)" 
+                                        maxLength={20}
                                     />
                                     <span className={formStyles.inputIcon}>
                                         <FaPhone />
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div className={formStyles.formGroup}>
+                                <Label className={formStyles.label}>
+                                    <FaHome className="text-gray-500" /> Domicile
+                                </Label>
+                                <div className={formStyles.inputWrapper}>
+                                    <Input 
+                                        type="text" 
+                                        name="Domicile" 
+                                        value={formData.Domicile} 
+                                        onChange={handleChange} 
+                                        className={formStyles.input}
+                                        placeholder="Entrez le domicile (optionnel)" 
+                                        maxLength={255}
+                                    />
+                                    <span className={formStyles.inputIcon}>
+                                        <FaHome />
                                     </span>
                                 </div>
                             </div>

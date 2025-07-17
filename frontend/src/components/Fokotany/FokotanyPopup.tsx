@@ -5,12 +5,9 @@ import {
   CursorArrowRippleIcon,
   TrashIcon
 } from "@heroicons/react/24/solid";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { RadialBarChart, RadialBar, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
-import { WifiOff } from "lucide-react";
 import useNotificationService from "../../hooks/useNotificationService";
 import {
   ChartConfig,
@@ -202,22 +199,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
   };
 
   return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            <div className="flex items-center gap-2">
-              <MapPinIcon className="h-6 w-6 text-green-500" />
-              <span>Détails du Fokotany: {fokotany.Nom}</span>
-              {!apiAvailable && (
-                <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-1 text-xs">
-                  <WifiOff className="h-3 w-3" /> Mode démo
-                </Badge>
-              )}
-            </div>
-          </DialogTitle>
-        </DialogHeader>
-        
+    <div>
         <div className="p-6 sm:p-8 flex flex-col gap-8">
           {/* Ligne 1 - Informations et graphique de pourcentage */}
           <div className="flex flex-col md:flex-row gap-8">
@@ -248,7 +230,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
               </div>
               
               <div className="flex items-start gap-2">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mt-1" />
+                <CheckCircleIcon className="h-5 w-5 text-green-500 mt-1 bg-color-blue" />
                 <span>
                   <span className="font-semibold">Enfants vaccinés :</span> {vaccinationStats.vaccinated}
                 </span>
@@ -258,7 +240,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors rounded-full"
                 >
                   <TrashIcon className="h-5 w-5" />
                   {loading ? "Suppression..." : "Supprimer"}
@@ -325,8 +307,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
             />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </div>
   );
 }
 

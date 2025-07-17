@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import FokotanyCard from "./FokotanyCard";
 import FokotanyPopup from "./FokotanyPopup";
-import { Dialog } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertCircle, Loader2, WifiOff } from "lucide-react"; // Icônes pour affichage vide, chargement et mode hors ligne
 import useNotificationService from "../../hooks/useNotificationService";
 import useApi from "../../hooks/useApi";
@@ -218,8 +218,13 @@ export default function FokotanyList() {
                 </div>
             )}
 
-            <Dialog open={showPopup} onOpenChange={setShowPopup}>  
-                {selectedFokotany && <FokotanyPopup fokotany={selectedFokotany} onClose={closePopup} />}
+            <Dialog open={showPopup} onOpenChange={setShowPopup}>
+                <DialogContent className="p-0 max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-red-50 to-white border-b border-red-200 ">
+                        <DialogTitle className="text-2xl font-bold text-red-700">Détails du fokotany </DialogTitle>
+                    </DialogHeader>
+                    {selectedFokotany && <FokotanyPopup fokotany={selectedFokotany} onClose={closePopup} />}
+                </DialogContent>    
             </Dialog>
         </div>
     );

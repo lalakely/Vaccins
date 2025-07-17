@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState, useRef } from "react";
 import HameauCard from "./HameauCard";
 import HameauPopup from "./HameauPopup";
-import { Dialog } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Loader2, WifiOff } from "lucide-react"; // Icônes pour affichage vide et chargement
@@ -163,8 +163,14 @@ export default function HameauList() {
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>
-                {selectedHameau && <HameauPopup hameau={selectedHameau} onClose={closePopup} />}
+                <DialogContent className="p-0 max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="rounded-t-lg px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-blue-200">
+                        <DialogTitle className="text-2xl font-bold text-blue-700">Détails de l'Hameau </DialogTitle>
+                    </DialogHeader>
+                    {selectedHameau && <HameauPopup hameau={selectedHameau} onClose={closePopup} />}
+                </DialogContent>    
             </Dialog>
+            
         </div>
     );
 }

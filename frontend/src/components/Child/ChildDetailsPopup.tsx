@@ -402,7 +402,7 @@ function ChildDetailsPopup({ enfant, onClose }: ChildDetailsPopupProps) {
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors shadow-md"
+                  className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors shadow-md rounded-full"
                 >
                   <TrashIcon className="h-5 w-5" /> Supprimer
                 </button>
