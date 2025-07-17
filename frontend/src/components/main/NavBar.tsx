@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaRegUser, FaBars, FaTimes, FaSignOutAlt, FaUsers, FaSyringe, FaChartBar } from "react-icons/fa";
+import { FaRegUser, FaBars, FaTimes, FaSignOutAlt, FaUsers, FaSyringe, FaChartBar, FaCog } from "react-icons/fa";
 import { LuMapPin } from "react-icons/lu";
 import { FaRegMap } from "react-icons/fa";
 import { FaHistory } from "react-icons/fa";
@@ -93,12 +93,20 @@ function NavBar() {
               {username || "Utilisateur"}
             </p>
           </div>
+          <Link 
+            to="/settings"
+            className="w-full text-left px-5 py-3.5 flex items-center gap-3 text-gray-700 hover:bg-gray-50 transition-all rounded-full focus-visible:ring-1 focus-visible:ring-gray-600 focus-visible:outline-none"
+          >
+            <FaCog size={16} className="text-gray-700" />
+            <span className="font-medium">Paramètres</span>
+          </Link>
+          <div className="border-t border-gray-100 my-1"></div>
           <button
             onClick={handleLogout}
-            className="w-full text-left px-5 py-3.5 flex items-center gap-3 text-red-600 hover:bg-gray-50 transition-all rounded-full"
+            className="w-full text-left px-5 py-3.5 flex items-center gap-3 text-red-600 hover:bg-red-50 transition-all rounded-full focus-visible:ring-1 focus-visible:ring-red-600 focus-visible:outline-none"
           >
-            <FaSignOutAlt size={16} /> 
-            <span className="font-medium">Déconnexion</span>
+            <FaSignOutAlt size={16} className="text-red-600" />
+            <span className="font-medium text-red-600">Déconnexion</span>
           </button>
         </div>
       </div>
@@ -136,6 +144,7 @@ function NavBar() {
           <NavItem to="/Vaccins" icon={<FaSyringe size={18} />} label="Vaccins" active={location.pathname === "/Vaccins"} />
           <NavItem to="/Fokotany" icon={<LuMapPin size={18} />} label="Fokotany" active={location.pathname === "/Fokotany"} />
           <NavItem to="/Hameau" icon={<FaRegMap size={18} />} label="Hameau" active={location.pathname === "/Hameau"} />
+          <NavItem to="/settings" icon={<FaCog size={18} />} label="Paramètres" active={location.pathname === "/settings"} />
         </nav>
       </div>
 
@@ -147,6 +156,7 @@ function NavBar() {
         <MobileNavItem to="/Vaccins" icon={<FaSyringe size={20} />} label="Vaccins" active={location.pathname === "/Vaccins"} />
         <MobileNavItem to="/Fokotany" icon={<LuMapPin size={20} />} label="Fokotany" active={location.pathname === "/Fokotany"} />
         <MobileNavItem to="/Hameau" icon={<FaRegMap size={20} />} label="Hameau" active={location.pathname === "/Hameau"} />
+        <MobileNavItem to="/settings" icon={<FaCog size={20} />} label="Paramètres" active={location.pathname === "/settings"} />
       </div>
     </>
   );

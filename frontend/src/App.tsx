@@ -6,6 +6,7 @@ import Fokotany from './pages/Fokotany';
 import Hameau from './pages/Hameau';
 import Connexion from './pages/Connexion';
 import Inscription from './pages/Inscription';
+import Settings from './pages/Settings';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ToastContainer from './components/notifications/ToastContainer';
@@ -74,6 +75,14 @@ function App() {
                                  <ChildHistoryPage />
                             </ProtectedRoute>
                         } 
+                    />
+                    <Route
+                        path="/settings"
+                        element={
+                            <ProtectedRoute>
+                                <Settings />
+                            </ProtectedRoute>
+                        }
                     />
                 </Routes>
                 </Router>
