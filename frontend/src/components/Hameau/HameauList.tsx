@@ -35,7 +35,7 @@ export default function HameauList() {
     const notificationsShown = useRef<boolean>(false); // Pour suivre si les notifications ont déjà été affichées
     
     // Définir une position centrale pour la carte (Madagascar)
-    const mapCenter = [-18.8792, 47.5079];
+    const mapCenter: L.LatLngTuple = [-18.8792, 47.5079]; // Coordonnées de Madagascar
     
     // Référence pour la carte Leaflet
     const mapRef = useRef<L.Map | null>(null);
@@ -249,10 +249,23 @@ export default function HameauList() {
     
     return (
         <div className="p-6 flex flex-col items-center">
+             {/* Barre de recherche */}
+             <div className="w-full max-w-md mb-6 rounded-full">
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                        type="text"
+                        placeholder="Rechercher un hameau par nom..."
+                        className="pl-9 border-gray-300 focus:border-blue-500 rounded-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
             {/* Carte des hameaux */}
             {!loading && data && data.length > 0 && (
                 <div className="w-full max-w-6xl mb-6">
-                    <Card>
+                    <div>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <MapPin className="h-5 w-5 text-green-500" />
@@ -265,23 +278,11 @@ export default function HameauList() {
                                 className="h-[400px] w-full border border-gray-200 rounded-xl overflow-hidden"
                             />
                         </CardContent>
-                    </Card>
+                    </div>
                 </div>
             )}
             
-            {/* Barre de recherche */}
-            <div className="w-full max-w-md mb-6">
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                        type="text"
-                        placeholder="Rechercher un hameau par nom..."
-                        className="pl-9 border-gray-300 focus:border-blue-500"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
+           
             
             {!apiAvailable && (
                 <Badge variant="outline" className="mb-4 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-2">

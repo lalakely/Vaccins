@@ -77,13 +77,13 @@ export default function VaccineList() {
     return (
         <div className="p-6 flex flex-col items-center">
             {/* Barre de recherche */}
-            <div className="w-full max-w-md mb-6">
+            <div className="w-full max-w-md mb-6 rounded-full">
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                     <Input
                         type="text"
                         placeholder="Rechercher un vaccin par nom, lot ou description..."
-                        className="pl-9 border-gray-300 focus:border-blue-500"
+                        className="pl-9 border-gray-300 focus:border-blue-500 rounded-full"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />

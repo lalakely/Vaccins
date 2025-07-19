@@ -152,7 +152,7 @@ exports.countVaccinatedEnfantsInHameau = async (req, res) => {
             `SELECT COUNT(DISTINCT e.ID) as vaccinated 
              FROM Enfants e 
              JOIN Vaccinations v ON e.ID = v.enfant_id 
-             WHERE e.Hameau = ? AND v.statut = 'administré'`, 
+             WHERE e.Hameau = ?`, 
             [hameauNom]
         );
 
@@ -198,7 +198,7 @@ exports.getHameauStats = async (req, res) => {
             `SELECT COUNT(DISTINCT e.ID) as vaccinated 
              FROM Enfants e 
              JOIN Vaccinations v ON e.ID = v.enfant_id 
-             WHERE e.Hameau = ? AND v.statut = 'administré'`, 
+             WHERE e.Hameau = ?`, 
             [hameauNom]
         );
 
@@ -235,7 +235,7 @@ exports.getHameauVaccinations = async (req, res) => {
             `SELECT v.* 
              FROM Vaccinations v
              JOIN Enfants e ON v.enfant_id = e.ID
-             WHERE e.Hameau = ? AND v.statut = 'administré'`, 
+             WHERE e.Hameau = ?`, 
             [hameauNom]
         );
 
