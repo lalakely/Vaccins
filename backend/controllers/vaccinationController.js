@@ -2,27 +2,71 @@ const db = require('../config/db');
 const notificationsController = require('./notificationsController');
 
 exports.createVaccination = async (req, res) => {
-    const sql = `
-        INSERT INTO Vaccinations (
-            enfant_id, vaccin_id, date_vaccination
-        ) VALUES (?, ?, ?)
-    `;
-
-    const values = [
-        req.body.enfant_id,
-        req.body.vaccin_id,
-        req.body.date_vaccination,
-    ];
-
-    console.log('SQL :', sql);
-    console.log('Values :', values);
-
+    // Démarrer une transaction pour s'assurer que les deux opérations (insertion vaccination et mise à jour stock) soient atomiques
+    const connection = await db.getConnection();
+    
     try {
-        const [result] = await db.query(sql, values);
+        await connection.beginTransaction();
+        
+        // 1. Vérifier d'abord que le stock du vaccin est suffisant
+        const [vaccinInfo] = await connection.query(
+            'SELECT Stock FROM Vaccins WHERE id = ?',
+            [req.body.vaccin_id]
+        );
+        
+        if (!vaccinInfo || vaccinInfo.length === 0) {
+            await connection.rollback();
+            connection.release();
+            return res.status(404).json({ message: 'Vaccin non trouvé' });
+        }
+        
+        // Vérifier que le stock est suffisant
+        if (vaccinInfo[0].Stock <= 0) {
+            await connection.rollback();
+            connection.release();
+            return res.status(400).json({ 
+                message: 'Stock insuffisant pour ce vaccin', 
+                stock: vaccinInfo[0].Stock 
+            });
+        }
+        
+        // 2. Insérer la vaccination
+        const sql = `
+            INSERT INTO Vaccinations (
+                enfant_id, vaccin_id, date_vaccination
+            ) VALUES (?, ?, ?)
+        `;
+
+        const values = [
+            req.body.enfant_id,
+            req.body.vaccin_id,
+            req.body.date_vaccination,
+        ];
+
+        console.log('SQL Vaccination:', sql);
+        console.log('Values:', values);
+
+        const [result] = await connection.query(sql, values);
         const newVaccinationId = result.insertId;
+        
+        // 3. Diminuer le stock du vaccin de 1 unité
+        const updateStockSql = `
+            UPDATE Vaccins 
+            SET Stock = Stock - 1 
+            WHERE id = ? AND Stock > 0
+        `;
+        
+        const [updateResult] = await connection.query(updateStockSql, [req.body.vaccin_id]);
+        
+        if (updateResult.affectedRows === 0) {
+            // Si aucune ligne n'est affectée, cela pourrait indiquer un problème
+            await connection.rollback();
+            connection.release();
+            return res.status(400).json({ message: 'Impossible de mettre à jour le stock du vaccin' });
+        }
 
         // Récupérer les données complètes de la vaccination ajoutée avec le nom du vaccin
-        const [newVaccination] = await db.query(`
+        const [newVaccination] = await connection.query(`
             SELECT v.*, vacc.Nom as name 
             FROM Vaccinations v 
             JOIN Vaccins vacc ON v.vaccin_id = vacc.id 
@@ -30,7 +74,7 @@ exports.createVaccination = async (req, res) => {
         `, [newVaccinationId]);
         
         // Récupérer les informations de l'enfant pour la notification
-        const [enfantInfo] = await db.query(`
+        const [enfantInfo] = await connection.query(`
             SELECT e.*, p.Nom as parent_nom, p.Prenom as parent_prenom
             FROM Enfants e
             LEFT JOIN Parents p ON e.parent_id = p.id
@@ -69,10 +113,23 @@ exports.createVaccination = async (req, res) => {
             }
         }
 
-        res.status(201).json(newVaccination[0]); // Retourner l'objet complet
+        // Valider la transaction
+        await connection.commit();
+        connection.release();
+        
+        res.status(201).json({
+            ...newVaccination[0], 
+            message: 'Vaccination enregistrée et stock diminué avec succès',
+            stockRestant: vaccinInfo[0].Stock - 1
+        });
     } catch (err) {
+        // En cas d'erreur, annuler la transaction
+        if (connection) {
+            await connection.rollback();
+            connection.release();
+        }
         console.error('Error details :', err);
-        res.status(500).json(err);
+        res.status(500).json({ message: 'Erreur lors de l\'enregistrement de la vaccination', error: err.message });
     }
 };
 

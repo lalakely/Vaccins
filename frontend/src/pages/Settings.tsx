@@ -233,44 +233,44 @@ export default function SettingsPage() {
       
       <Tabs defaultValue="account" className="w-full ">
         <TabsList className="flex gap-4 mb-8 p-1.5 tabs-list bg-white">
-          <TabsTrigger value="account" className="flex items-center gap-2 py-3 px-5 rounded-full border-full">
-            <FaUser className="text-sm" />
-            <span>Compte</span>
+          <TabsTrigger value="account" className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full hover:shadow-xl transition-all duration-300 group data-[state=active]:bg-white data-[state=active]:text-gray-900">
+            <FaUser className="text-sm text-gray-500 group-data-[state=active]:text-gray-900" />
+            <span className="text-sm text-gray-500 group-data-[state=active]:text-gray-900">Compte</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2 py-3 px-5 rounded-full border-full">
-            <FaBell className="text-sm" />
-            <span>Notifications</span>
+          <TabsTrigger value="notifications" className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-full hover:shadow-xl transition-all duration-300 group data-[state=active]:bg-white data-[state=active]:text-gray-900">
+            <FaBell className="text-sm text-gray-500 group-data-[state=active]:text-gray-900" />
+            <span className="text-sm text-gray-500 group-data-[state=active]:text-gray-900">Notifications</span>
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="account">
-          <div>
+          <div className="content-left">
             <CardHeader className="pt-6 pb-5">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-end gap-2">
                 <FaUser className="text-primary" /> 
                 Paramètres du compte
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-left">
                 Gérez les informations de votre compte et vos préférences de sécurité.
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleAccountSubmit}>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Nom d'utilisateur</Label>
+                    <Label htmlFor="username" className="text-left">Nom d'utilisateur</Label>
                     <Input 
                       id="username" 
                       name="username"
                       value={accountSettings.username}
                       onChange={handleAccountChange}
                       placeholder="Votre nom d'utilisateur"
-                      className="rounded-xl py-3 px-4"
+                      className="rounded-full py-5 px-6"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-left">Email</Label>
                     <Input 
                       id="email" 
                       name="email"
@@ -278,20 +278,20 @@ export default function SettingsPage() {
                       value={accountSettings.email}
                       onChange={handleAccountChange}
                       placeholder="votre.email@exemple.com"
-                      className="rounded-xl py-3 px-4"
+                      className="rounded-full py-5 px-6"
                     />
                   </div>
                 </div>
                 
                 <div className="pt-4 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                  <h3 className="text-lg font-medium mb-4 flex items-end gap-2">
                     <FaShieldAlt className="text-primary" />
                     Changer de mot de passe
                   </h3>
                   
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                    <div className="space-y-2 text-left">
+                      <Label htmlFor="currentPassword" className="text-left">Mot de passe actuel</Label>
                       <Input 
                         id="currentPassword" 
                         name="currentPassword"
@@ -299,12 +299,12 @@ export default function SettingsPage() {
                         value={accountSettings.currentPassword}
                         onChange={handleAccountChange}
                         placeholder="••••••••"
-                        className="rounded-xl py-3 px-4"
+                        className="rounded-full py-5 px-6"
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                    <div className="space-y-2 text-left">
+                      <Label htmlFor="newPassword" className="text-left">Nouveau mot de passe</Label>
                       <Input 
                         id="newPassword" 
                         name="newPassword"
@@ -312,12 +312,12 @@ export default function SettingsPage() {
                         value={accountSettings.newPassword}
                         onChange={handleAccountChange}
                         placeholder="••••••••"
-                        className="rounded-xl py-3 px-4"
+                        className="rounded-full py-6 px-6"
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                    <div className="space-y-2 text-left">
+                      <Label htmlFor="confirmPassword" className="text-left">Confirmer le mot de passe</Label>
                       <Input 
                         id="confirmPassword" 
                         name="confirmPassword"
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                         value={accountSettings.confirmPassword}
                         onChange={handleAccountChange}
                         placeholder="••••••••"
-                        className="rounded-xl py-3 px-4"
+                        className="rounded-full py-6 px-6"
                       />
                     </div>
                   </div>
@@ -354,7 +354,7 @@ export default function SettingsPage() {
         
         <TabsContent value="notifications">
           <div>
-            <CardHeader className="pt-6 pb-5">
+            <CardHeader className="pt-6 pb-5 text-left">
               <CardTitle className="flex items-center gap-2">
                 <FaBell className="text-primary" />
                 Paramètres de notification
@@ -365,7 +365,7 @@ export default function SettingsPage() {
             </CardHeader>
             <form onSubmit={handleNotificationSubmit}>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-medium">Activer les notifications</h4>

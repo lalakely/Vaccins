@@ -18,6 +18,8 @@ interface Vaccine {
     Age_Annees?: number;
     Age_Mois?: number;
     Age_Jours?: number;
+    Lot: string;
+    Stock: number;
 }
 
 interface Rappel {
@@ -49,7 +51,9 @@ export default function AddVaccine() {
         Age_Annees: '0', // Âge de prescription en années
         Age_Mois: '0', // Âge de prescription en mois
         Age_Jours: '0', // Âge de prescription en jours
-        Rappels: [] as Rappel[] // Rappels du vaccin
+        Rappels: [] as Rappel[], // Rappels du vaccin
+        Lot: '', // Numéro de lot du vaccin
+        Stock: '0' // Nombre de vaccins disponibles
     });
     
     const [availableVaccines, setAvailableVaccines] = useState<Vaccine[]>([]);
@@ -209,6 +213,7 @@ export default function AddVaccine() {
                 Age_Annees: parseInt(formData.Age_Annees),
                 Age_Mois: parseInt(formData.Age_Mois),
                 Age_Jours: parseInt(formData.Age_Jours),
+                Stock: parseInt(formData.Stock),
                 // Envoyer les objets SuiteVaccins complets
                 SuiteVaccins: allSuites,
                 // Envoyer aussi les rappels séparément pour compatibilité
@@ -237,7 +242,9 @@ export default function AddVaccine() {
                     Age_Annees: '0',
                     Age_Mois: '0',
                     Age_Jours: '0',
-                    Rappels: []
+                    Rappels: [],
+                    Lot: '',
+                    Stock: '0'
                 });
                 setSelectedPrerequisites([]);
                 setSelectedSuites([]);
@@ -347,6 +354,43 @@ export default function AddVaccine() {
                                             className={formStyles.input}
                                             placeholder="Description du vaccin"
                                         />
+                                    </div>
+                                </div>
+
+                                <div className={formStyles.formGroup}>
+                                    <Label className={formStyles.label}>Numéro de lot</Label>
+                                    <div className={formStyles.inputWrapper}>
+                                        <Input 
+                                            type="text" 
+                                            name="Lot" 
+                                            value={formData.Lot} 
+                                            onChange={handleChange} 
+                                            required 
+                                            className={formStyles.input}
+                                            placeholder="Numéro de lot"
+                                        />
+                                        <span className={formStyles.inputIcon}>
+                                            <CiCirclePlus />
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className={formStyles.formGroup}>
+                                    <Label className={formStyles.label}>Stock disponible</Label>
+                                    <div className={formStyles.inputWrapper}>
+                                        <Input 
+                                            type="number" 
+                                            name="Stock" 
+                                            value={formData.Stock} 
+                                            onChange={handleChange} 
+                                            required 
+                                            min="0"
+                                            className={formStyles.input}
+                                            placeholder="Nombre de vaccins disponibles"
+                                        />
+                                        <span className={formStyles.inputIcon}>
+                                            <CiCirclePlus />
+                                        </span>
                                     </div>
                                 </div>
                             </div>

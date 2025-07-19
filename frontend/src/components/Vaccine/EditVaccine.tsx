@@ -24,6 +24,8 @@ interface Vaccine {
   Age_Annees?: number;
   Age_Mois?: number;
   Age_Jours?: number;
+  Lot: string;
+  Stock: number;
 }
 
 interface PrerequisVaccin {
@@ -61,7 +63,9 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
     Age_Annees: (vaccine.Age_Annees || 0).toString(),
     Age_Mois: (vaccine.Age_Mois || 0).toString(),
     Age_Jours: (vaccine.Age_Jours || 0).toString(),
-    Rappels: [] as Rappel[]
+    Rappels: [] as Rappel[],
+    Lot: vaccine.Lot || '',
+    Stock: (vaccine.Stock || 0).toString()
   });
 
   const [availableVaccines, setAvailableVaccines] = useState<Vaccine[]>([]);
@@ -328,6 +332,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
       Age_Annees: parseInt(formData.Age_Annees, 10) || 0,
       Age_Mois: parseInt(formData.Age_Mois, 10) || 0,
       Age_Jours: parseInt(formData.Age_Jours, 10) || 0,
+      Stock: parseInt(formData.Stock, 10) || 0,
       // Envoyer les objets SuiteVaccins complets
       SuiteVaccins: allSuites,
       // Envoyer aussi les rappels séparément pour compatibilité
@@ -412,6 +417,23 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
               <div>
                 <Label className="block mb-2">Description</Label>
                 <Input type="text" name="Description" value={formData.Description} onChange={handleChange} required />
+              </div>
+
+              <div>
+                <Label className="block mb-2">Numéro de lot</Label>
+                <Input type="text" name="Lot" value={formData.Lot} onChange={handleChange} required />
+              </div>
+
+              <div>
+                <Label className="block mb-2">Stock disponible</Label>
+                <Input 
+                  type="number" 
+                  name="Stock" 
+                  value={formData.Stock} 
+                  onChange={handleChange}
+                  min="0" 
+                  required 
+                />
               </div>
             </div>
 

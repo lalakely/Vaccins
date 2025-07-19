@@ -23,6 +23,8 @@ interface Vaccine {
   Age_Annees?: number;
   Age_Mois?: number;
   Age_Jours?: number;
+  Lot: string;
+  Stock: number;
   [key: string]: any;
 }
 
@@ -213,6 +215,16 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
               <div className="flex items-start gap-2">
                 <InformationCircleIcon className="h-5 w-5 text-red-500 mt-1" />
                 <span><span className="font-semibold">Description :</span> {vaccine.Description}</span>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <InformationCircleIcon className="h-5 w-5 text-red-500 mt-1" />
+                <span><span className="font-semibold">Numéro de lot :</span> {vaccine.Lot || 'Non spécifié'}</span>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <InformationCircleIcon className="h-5 w-5 text-red-500 mt-1" />
+                <span><span className="font-semibold">Stock disponible :</span> {vaccine.Stock !== undefined ? vaccine.Stock : 'Non spécifié'}</span>
               </div>
               
               {/* Affichage de l'âge recommandé pour la prescription */}

@@ -11,8 +11,8 @@ exports.createVaccin = async (req, res) => {
         const sql = `
             INSERT INTO Vaccins (
                 Nom, Duree, Date_arrivee, Date_peremption, Description,
-                Age_Annees, Age_Mois, Age_Jours
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                Age_Annees, Age_Mois, Age_Jours, Lot, Stock
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -23,7 +23,9 @@ exports.createVaccin = async (req, res) => {
             req.body.Description,
             req.body.Age_Annees || 0,
             req.body.Age_Mois || 0,
-            req.body.Age_Jours || 0
+            req.body.Age_Jours || 0,
+            req.body.Lot || '',
+            req.body.Stock || 0
         ];
 
         console.log('SQL :', sql);
@@ -298,7 +300,7 @@ exports.deleteVaccin = async (req, res) => {
 // Update a Vaccine
 exports.updateVaccin = async (req, res) => {
     const vaccinId = req.params.id;
-    const { Nom, Duree, Date_arrivee, Date_peremption, Description, PrerequisVaccins, SuiteVaccins, Age_Annees, Age_Mois, Age_Jours, Rappels } = req.body;
+    const { Nom, Duree, Date_arrivee, Date_peremption, Description, PrerequisVaccins, SuiteVaccins, Age_Annees, Age_Mois, Age_Jours, Rappels, Lot, Stock } = req.body;
     const connection = await db.getConnection();
     
     try {
@@ -308,13 +310,14 @@ exports.updateVaccin = async (req, res) => {
         const query = `
             UPDATE Vaccins 
             SET Nom = ?, Duree = ?, Date_arrivee = ?, Date_peremption = ?, Description = ?,
-            Age_Annees = ?, Age_Mois = ?, Age_Jours = ?
+            Age_Annees = ?, Age_Mois = ?, Age_Jours = ?, Lot = ?, Stock = ?
             WHERE id = ?
         `;
 
         const [result] = await connection.query(query, [
             Nom, Duree, Date_arrivee, Date_peremption, Description, 
             Age_Annees || 0, Age_Mois || 0, Age_Jours || 0, 
+            Lot || '', Stock || 0,
             vaccinId
         ]);
         

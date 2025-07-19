@@ -1,5 +1,5 @@
 import { Syringe, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils"; // Utilitaire pour combiner les classes Tailwind (optionnel)
 import { useEffect, useState } from "react";
@@ -11,6 +11,8 @@ interface Vaccine {
   Date_arrivee: string;
   Date_peremption: string;
   Description: string;
+  Lot: string;
+  Stock: number;
   [key: string]: any;
 }
 
@@ -95,7 +97,18 @@ function VaccineCard({ vaccine, onDetailsClick, className }: VaccineCardProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-8">
+      <CardContent className="p-8 space-y-4">
+        <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
+          <div>
+            <p className="font-semibold">Lot:</p>
+            <p>{vaccine.Lot || 'Non spécifié'}</p>
+          </div>
+          <div>
+            <p className="font-semibold">Stock:</p>
+            <p>{vaccine.Stock !== undefined ? vaccine.Stock : 'Non spécifié'}</p>
+          </div>
+        </div>
+
         <Button
           variant="outline"
           className="w-full max-w-xs mx-auto border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-200"
