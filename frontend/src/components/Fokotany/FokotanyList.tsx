@@ -1,12 +1,15 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import FokotanyCard from "./FokotanyCard";
 import FokotanyPopup from "./FokotanyPopup";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertCircle, Loader2, WifiOff } from "lucide-react"; // Icônes pour affichage vide, chargement et mode hors ligne
+import { AlertCircle, Loader2, WifiOff, Search, MapPin } from "lucide-react"; // Icônes pour affichage vide, chargement et mode hors ligne
+import { Input } from "@/components/ui/input";
 import useNotificationService from "../../hooks/useNotificationService";
 import useApi from "../../hooks/useApi";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Définir l'interface pour un Fokotany
 interface Fokotany {
@@ -23,6 +26,7 @@ interface Fokotany {
 export default function FokotanyList() {
     const [selectedFokotany, setSelectedFokotany] = useState<Fokotany | null>(null);
     const [showPopup, setShowPopup] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(""); // Ajout de l'état de recherche
     const { showWarning } = useNotificationService();
     const lowCoverageAlertsShown = useRef<Set<number>>(new Set()); // Pour suivre les fokotany déjà alertés
     
@@ -173,9 +177,166 @@ export default function FokotanyList() {
         setShowPopup(false);
         setSelectedFokotany(null);
     };
+    
+    // Filtrer les fokotany en fonction du terme de recherche
+    const filteredData = useMemo(() => {
+        if (!data || !searchTerm.trim()) return data;
+        
+        const searchTermLower = searchTerm.toLowerCase();
+        return data.filter(fokotany => 
+            fokotany.Nom.toLowerCase().includes(searchTermLower)
+        );
+    }, [data, searchTerm]);
 
+    // Définir une position centrale pour la carte (Madagascar)
+    const mapCenter = [-18.8792, 47.5079];
+    
+    // Référence pour la carte Leaflet
+    const mapRef = useRef<L.Map | null>(null);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    
+    // Fix pour les icônes Leaflet dans React
+    useEffect(() => {
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+        });
+    }, []);
+    
+    // Icônes personnalisées pour les fokotany selon leur couverture vaccinale
+    const goodCoverageIcon = useMemo(() => new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }), []);
+    
+    const mediumCoverageIcon = useMemo(() => new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }), []);
+    
+    const lowCoverageIcon = useMemo(() => new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }), []);
+    
+    // Initialisation et gestion de la carte
+    useEffect(() => {
+        // Si les données sont chargées et que la carte n'est pas encore initialisée
+        if (!isLoading && data && data.length > 0 && mapContainerRef.current && !mapRef.current) {
+            // Initialisation de la carte
+            const map = L.map(mapContainerRef.current).setView(mapCenter, 6);
+            
+            // Ajout du fond de carte
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Sauvegarde de la référence de la carte
+            mapRef.current = map;
+            
+            // Tableau pour stocker les coordonnées valides
+            const validCoordinates: L.LatLngTuple[] = [];
+            
+            data.forEach((fokotany) => {
+                if (fokotany.px && fokotany.py) {
+                    // Conversion des coordonnées en nombres si nécessaire
+                    const lat = typeof fokotany.py === 'string' ? parseFloat(fokotany.py) : fokotany.py;
+                    const lng = typeof fokotany.px === 'string' ? parseFloat(fokotany.px) : fokotany.px;
+                    
+                    // Calculer le pourcentage de couverture vaccinale
+                    const vaccinationCoverage = fokotany.nombre_enfant && fokotany.nombre_enfant > 0 ?
+                        Math.round(((fokotany.nombre_enfant_vaccines || 0) / fokotany.nombre_enfant) * 100) : 0;
+                    
+                    // Sélectionner l'icône en fonction de la couverture vaccinale
+                    let icon = goodCoverageIcon; // Par défaut, bonne couverture
+                    if (vaccinationCoverage < 50) {
+                        icon = lowCoverageIcon; // Faible couverture
+                    } else if (vaccinationCoverage < 75) {
+                        icon = mediumCoverageIcon; // Couverture moyenne
+                    }
+                    
+                    // Ajouter le marqueur à la carte
+                    L.marker([lat, lng] as L.LatLngTuple, { icon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div>
+                                <h3 class="font-bold">${fokotany.Nom}</h3>
+                                <p>Population: ${fokotany.nombre_personne || "N/A"}</p>
+                                <p>Enfants: ${fokotany.nombre_enfant || "N/A"}</p>
+                                <p>Enfants vaccinés: ${fokotany.nombre_enfant_vaccines || "N/A"}</p>
+                                <p>Couverture vaccinale: ${vaccinationCoverage}%</p>
+                            </div>
+                        `);
+                    
+                    // Ajouter les coordonnées valides au tableau
+                    validCoordinates.push([lat, lng] as L.LatLngTuple);
+                }
+            });
+            
+            // Ajuster la vue pour inclure tous les marqueurs
+            if (validCoordinates.length > 0) {
+                map.fitBounds(L.latLngBounds(validCoordinates));
+            }
+        }
+        
+        // Nettoyage à la destruction du composant
+        return () => {
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
+        };
+    }, [data, isLoading, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon, mapCenter]);
+    
     return (
         <div className="p-6 flex flex-col items-center">
+            {/* Carte des fokotany */}
+            {!isLoading && data && data.length > 0 && (
+                <div className="w-full max-w-6xl mb-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5 text-red-500" />
+                                Carte des fokotany
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div 
+                                ref={mapContainerRef} 
+                                className="h-[400px] w-full border border-gray-200 rounded-xl overflow-hidden"
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+            
+            {/* Barre de recherche */}
+            <div className="w-full max-w-md mb-6">
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                        type="text"
+                        placeholder="Rechercher un fokotany par nom..."
+                        className="pl-9 border-gray-300 focus:border-red-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
+            
             {/* En-tête avec badge mode hors ligne si l'API est indisponible */}
             {!apiAvailable && (
                 <div className="w-full flex justify-center mb-4">
@@ -207,15 +368,27 @@ export default function FokotanyList() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {data.map((fokotany) => (
-                        <FokotanyCard 
-                            key={fokotany.ID}
-                            fokotany={fokotany}
-                            onDetailsClick={handleDetailsClick}
-                        />
-                    ))}
-                </div>
+                <>
+                    {filteredData && filteredData.length === 0 && searchTerm && (
+                        <div className="w-full flex justify-center mb-6">
+                            <Card className="w-full max-w-md p-4 text-center">
+                                <CardContent className="flex flex-col items-center pt-4">
+                                    <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
+                                    <p className="text-gray-700">Aucun fokotany ne correspond à votre recherche</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {filteredData && filteredData.map((fokotany) => (
+                            <FokotanyCard 
+                                key={fokotany.ID}
+                                fokotany={fokotany}
+                                onDetailsClick={handleDetailsClick}
+                            />
+                        ))}
+                    </div>
+                </>
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>

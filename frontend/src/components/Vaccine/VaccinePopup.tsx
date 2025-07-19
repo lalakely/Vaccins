@@ -8,25 +8,10 @@ import {
   ExclamationCircleIcon,
   ArrowRightIcon
 } from "@heroicons/react/24/solid";
-import { useState, useEffect } from "react";
+import { PackageX, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import EditVaccine from "./EditVaccine";
-
-interface Vaccine {
-  id: number;
-  Nom: string;
-  Duree: number; // Changé en number pour être compatible avec EditVaccine
-  Date_arrivee: string;
-  Date_peremption: string;
-  Description: string;
-  strict?: boolean; // Flag indiquant si un prérequis ou suite est strict
-  delai?: number; // Délai en jours pour un vaccin suite
-  Age_Annees?: number;
-  Age_Mois?: number;
-  Age_Jours?: number;
-  Lot: string;
-  Stock: number;
-  [key: string]: any;
-}
+import { Vaccine, VaccineWithRelations } from "@/types/vaccine";
 
 interface Rappel {
   delai: number;
@@ -39,13 +24,22 @@ interface VaccinePopupProps {
 }
 
 function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
+  // Vérifier si le vaccin est périmé
+  const isExpired = useMemo(() => {
+    if (!vaccine.Date_peremption) return false;
+    
+    const currentDate = new Date();
+    const expiryDate = new Date(vaccine.Date_peremption);
+    
+    return currentDate > expiryDate;
+  }, [vaccine.Date_peremption]);
   const [loading, setLoading] = useState(false);
-  const [prerequisVaccins, setPrerequisVaccins] = useState<Vaccine[]>([]);
+  const [prerequisVaccins, setPrerequisVaccins] = useState<VaccineWithRelations[]>([]);
   const [loadingPrereq, setLoadingPrereq] = useState(false);
   const [errorPrereq, setErrorPrereq] = useState<string | null>(null);
   
   // États pour les vaccins suites
-  const [suiteVaccins, setSuiteVaccins] = useState<Vaccine[]>([]);
+  const [suiteVaccins, setSuiteVaccins] = useState<VaccineWithRelations[]>([]);
   const [loadingSuite, setLoadingSuite] = useState(false);
   const [errorSuite, setErrorSuite] = useState<string | null>(null);
   
@@ -69,7 +63,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
           throw new Error('Erreur lors de la récupération des vaccins prérequis');
         }
         
-        const data = await response.json() as Vaccine[];
+        const data = await response.json() as VaccineWithRelations[];
         setPrerequisVaccins(data);
       } catch (err) {
         console.error('Erreur:', err);
@@ -97,7 +91,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
           throw new Error('Erreur lors de la récupération des vaccins suites');
         }
         
-        const data = await response.json() as Vaccine[];
+        const data = await response.json() as VaccineWithRelations[];
         console.log('Suite vaccins data:', data);
         
         // Normaliser les données pour garantir que les champs strict et delai sont correctement typés
@@ -217,14 +211,45 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
                 <span><span className="font-semibold">Description :</span> {vaccine.Description}</span>
               </div>
 
-              <div className="flex items-start gap-2">
-                <InformationCircleIcon className="h-5 w-5 text-red-500 mt-1" />
-                <span><span className="font-semibold">Numéro de lot :</span> {vaccine.Lot || 'Non spécifié'}</span>
-              </div>
+                            <div>
+                {/* Indicateur de péremption */}
+                {isExpired && (
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 p-3 rounded-md text-amber-600 mb-4">
+                    <AlertTriangle size={18} />
+                    <span className="font-medium">Vaccin périmé - Ne pas utiliser, date de péremption dépassée ({new Date(vaccine.Date_peremption).toLocaleDateString()})</span>
+                  </div>
+                )}
+                
+                {/* Indicateur de stock épuisé */}
+                {!isExpired && vaccine.Stock === 0 && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 p-3 rounded-md text-red-600 mb-4">
+                    <PackageX size={18} />
+                    <span className="font-medium">Stock épuisé - Ce vaccin n'est plus disponible</span>
+                  </div>
+                )}
 
-              <div className="flex items-start gap-2">
-                <InformationCircleIcon className="h-5 w-5 text-red-500 mt-1" />
-                <span><span className="font-semibold">Stock disponible :</span> {vaccine.Stock !== undefined ? vaccine.Stock : 'Non spécifié'}</span>
+                <div className="flex items-start gap-8 mb-4">
+                  <div className="text-gray-700">
+                    <p className="font-semibold">Lot:</p>
+                    <p>{vaccine.Lot || 'Non spécifié'}</p>
+                  </div>
+                  <div className="text-gray-700">
+                    <p className="font-semibold">Stock:</p>
+                    {isExpired ? (
+                      <div className="flex items-center text-amber-600 font-medium gap-1">
+                        <AlertTriangle size={16} />
+                        <span>Périmé</span>
+                      </div>
+                    ) : vaccine.Stock === 0 ? (
+                      <div className="flex items-center text-red-600 font-medium gap-1">
+                        <PackageX size={16} />
+                        <span>Épuisé</span>
+                      </div>
+                    ) : (
+                      <p>{vaccine.Stock !== undefined ? vaccine.Stock : 'Non spécifié'}</p>
+                    )}
+                  </div>
+                </div>
               </div>
               
               {/* Affichage de l'âge recommandé pour la prescription */}
@@ -390,7 +415,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
           <div className="pt-6 mt-6 flex gap-4 border-t border-red-100">
             {/* Composant de modification */}
             <EditVaccine 
-              vaccine={vaccine} 
+              vaccine={vaccine as any} 
               onEditSuccess={() => {
                 onClose();
                 window.location.reload();

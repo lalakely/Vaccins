@@ -1,12 +1,15 @@
 import axios from "axios";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import HameauCard from "./HameauCard";
 import HameauPopup from "./HameauPopup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Loader2, WifiOff } from "lucide-react"; // Icônes pour affichage vide et chargement
+import { AlertCircle, Loader2, WifiOff, Search, MapPin } from "lucide-react"; // Icônes pour affichage vide et chargement
+import { Input } from "@/components/ui/input";
 import useNotificationService from "../../hooks/useNotificationService";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Définir l'interface pour un Hameau
 interface Hameau {
@@ -27,8 +30,16 @@ export default function HameauList() {
     const [showPopup, setShowPopup] = useState(false);
     const [loading, setLoading] = useState(true); // Ajout de l'état de chargement
     const [apiAvailable, setApiAvailable] = useState(true); // Indiquer si l'API est disponible
+    const [searchTerm, setSearchTerm] = useState(""); // Ajout de l'état de recherche
     const { showError, showInfo } = useNotificationService();
     const notificationsShown = useRef<boolean>(false); // Pour suivre si les notifications ont déjà été affichées
+    
+    // Définir une position centrale pour la carte (Madagascar)
+    const mapCenter = [-18.8792, 47.5079];
+    
+    // Référence pour la carte Leaflet
+    const mapRef = useRef<L.Map | null>(null);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchHameaux = async () => {
@@ -122,9 +133,156 @@ export default function HameauList() {
         setShowPopup(false);
         setSelectedHameau(null);
     };
-
+    
+    // Filtrer les hameaux en fonction du terme de recherche
+    const filteredData = useMemo(() => {
+        return data.filter(hameau => 
+            hameau.Nom.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [data, searchTerm]);
+    
+    // Icônes personnalisées pour les hameaux selon leur couverture vaccinale
+    const goodCoverageIcon = useMemo(() => new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }), []);
+    
+    const mediumCoverageIcon = useMemo(() => new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }), []);
+    
+    const lowCoverageIcon = useMemo(() => new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }), []);
+    
+    // Fix pour les icônes Leaflet dans React
+    useEffect(() => {
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+        });
+    }, []);
+    
+    // Initialisation et gestion de la carte
+    useEffect(() => {
+        // Si les données sont chargées et que la carte n'est pas encore initialisée
+        if (!loading && data && data.length > 0 && mapContainerRef.current && !mapRef.current) {
+            // Initialisation de la carte
+            const map = L.map(mapContainerRef.current).setView(mapCenter, 6);
+            
+            // Ajout du fond de carte
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Sauvegarde de la référence de la carte
+            mapRef.current = map;
+            
+            // Tableau pour stocker les coordonnées valides
+            const validCoordinates: L.LatLngTuple[] = [];
+            
+            data.forEach((hameau) => {
+                if (hameau.px && hameau.py) {
+                    // Conversion des coordonnées en nombres si nécessaire
+                    const lat = typeof hameau.py === 'string' ? parseFloat(hameau.py) : hameau.py;
+                    const lng = typeof hameau.px === 'string' ? parseFloat(hameau.px) : hameau.px;
+                    
+                    // Calculer le pourcentage de couverture vaccinale
+                    const vaccinationCoverage = hameau.nombre_enfant && hameau.nombre_enfant > 0 ?
+                        Math.round(((hameau.nombre_enfant_vaccines || 0) / hameau.nombre_enfant) * 100) : 0;
+                    
+                    // Sélectionner l'icône en fonction de la couverture vaccinale
+                    let icon = goodCoverageIcon; // Par défaut, bonne couverture
+                    if (vaccinationCoverage < 50) {
+                        icon = lowCoverageIcon; // Faible couverture
+                    } else if (vaccinationCoverage < 75) {
+                        icon = mediumCoverageIcon; // Couverture moyenne
+                    }
+                    
+                    // Ajouter le marqueur à la carte
+                    L.marker([lat, lng] as L.LatLngTuple, { icon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div>
+                                <h3 class="font-bold">${hameau.Nom}</h3>
+                                <p>Population: ${hameau.nombre_personne || "N/A"}</p>
+                                <p>Enfants: ${hameau.nombre_enfant || "N/A"}</p>
+                                <p>Enfants vaccinés: ${hameau.nombre_enfant_vaccines || "N/A"}</p>
+                                <p>Couverture vaccinale: ${vaccinationCoverage}%</p>
+                            </div>
+                        `);
+                    
+                    // Ajouter les coordonnées valides au tableau
+                    validCoordinates.push([lat, lng] as L.LatLngTuple);
+                }
+            });
+            
+            // Ajuster la vue pour inclure tous les marqueurs
+            if (validCoordinates.length > 0) {
+                map.fitBounds(L.latLngBounds(validCoordinates));
+            }
+        }
+        
+        // Nettoyage à la destruction du composant
+        return () => {
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
+        };
+    }, [data, loading, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon, mapCenter]);
+    
     return (
         <div className="p-6 flex flex-col items-center">
+            {/* Carte des hameaux */}
+            {!loading && data && data.length > 0 && (
+                <div className="w-full max-w-6xl mb-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5 text-green-500" />
+                                Carte des hameaux
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div 
+                                ref={mapContainerRef} 
+                                className="h-[400px] w-full border border-gray-200 rounded-xl overflow-hidden"
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+            
+            {/* Barre de recherche */}
+            <div className="w-full max-w-md mb-6">
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                        type="text"
+                        placeholder="Rechercher un hameau par nom..."
+                        className="pl-9 border-gray-300 focus:border-blue-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </div>
+            
             {!apiAvailable && (
                 <Badge variant="outline" className="mb-4 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-2">
                     <WifiOff className="h-3 w-3" /> Mode hors ligne - Certaines fonctionnalités peuvent être limitées
@@ -151,15 +309,27 @@ export default function HameauList() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {data.map((hameau) => (
-                        <HameauCard 
-                            key={hameau.ID || hameau.id}
-                            hameau={hameau}
-                            onDetailsClick={handleDetailsClick}
-                        />
-                    ))}
-                </div>
+                <>
+                    {filteredData.length === 0 && searchTerm && (
+                        <div className="w-full flex justify-center mb-6">
+                            <Card className="w-full max-w-md p-4 text-center">
+                                <CardContent className="flex flex-col items-center pt-4">
+                                    <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
+                                    <p className="text-gray-700">Aucun hameau ne correspond à votre recherche</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {filteredData.map((hameau) => (
+                            <HameauCard 
+                                key={hameau.ID || hameau.id}
+                                hameau={hameau}
+                                onDetailsClick={handleDetailsClick}
+                            />
+                        ))}
+                    </div>
+                </>
             )}
 
             <Dialog open={showPopup} onOpenChange={setShowPopup}>

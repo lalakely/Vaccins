@@ -21,12 +21,21 @@ exports.createVaccin = async (req, res) => {
             req.body.Date_arrivee,
             req.body.Date_peremption,
             req.body.Description,
-            req.body.Age_Annees || 0,
-            req.body.Age_Mois || 0,
-            req.body.Age_Jours || 0,
-            req.body.Lot || '',
-            req.body.Stock || 0
+            req.body.Age_Annees ?? 0,
+            req.body.Age_Mois ?? 0,
+            req.body.Age_Jours ?? 0,
+            req.body.Lot !== undefined ? req.body.Lot : '',
+            req.body.Stock !== undefined ? parseInt(req.body.Stock) : 0
         ];
+        
+        // Log pour déboguer les valeurs reçues
+        console.log('Valeurs reçues:', {
+            Lot: req.body.Lot,
+            Stock: req.body.Stock,
+            type_lot: typeof req.body.Lot,
+            type_stock: typeof req.body.Stock
+        });
+        
 
         console.log('SQL :', sql);
         console.log('Values :', values);
@@ -306,22 +315,37 @@ exports.updateVaccin = async (req, res) => {
     try {
         await connection.beginTransaction();
         
-        // 1. Mettre à jour le vaccin
-        const query = `
+        // 1. Mise à jour du vaccin principal
+        const updateSql = `
             UPDATE Vaccins 
             SET Nom = ?, Duree = ?, Date_arrivee = ?, Date_peremption = ?, Description = ?,
-            Age_Annees = ?, Age_Mois = ?, Age_Jours = ?, Lot = ?, Stock = ?
+                Age_Annees = ?, Age_Mois = ?, Age_Jours = ?, Lot = ?, Stock = ?
             WHERE id = ?
         `;
-
-        const [result] = await connection.query(query, [
-            Nom, Duree, Date_arrivee, Date_peremption, Description, 
-            Age_Annees || 0, Age_Mois || 0, Age_Jours || 0, 
-            Lot || '', Stock || 0,
+        
+        // Log pour déboguer les valeurs reçues lors de la mise à jour
+        console.log('Valeurs reçues pour mise à jour:', {
+            Lot,
+            Stock,
+            type_lot: typeof Lot,
+            type_stock: typeof Stock
+        });
+        
+        const [updateResult] = await connection.query(updateSql, [
+            Nom ?? '', 
+            Duree ?? 0, 
+            Date_arrivee ?? null, 
+            Date_peremption ?? null, 
+            Description ?? '',
+            Age_Annees ?? 0,
+            Age_Mois ?? 0,
+            Age_Jours ?? 0,
+            Lot !== undefined ? Lot : '',
+            Stock !== undefined ? parseInt(Stock) : 0,
             vaccinId
         ]);
         
-        if (result.affectedRows === 0) {
+        if (updateResult.affectedRows === 0) {
             await connection.rollback();
             connection.release();
             return res.status(404).send("Vaccin non trouvé");
