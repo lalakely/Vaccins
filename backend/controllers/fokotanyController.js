@@ -235,7 +235,7 @@ exports.getFokotanyVaccinations = async (req, res) => {
             `SELECT v.* 
              FROM Vaccinations v
              JOIN Enfants e ON v.enfant_id = e.ID
-             WHERE e.Fokotany = ? AND v.statut = 'administré'`, 
+             WHERE e.Fokotany = ?`, 
             [fokotanyNom]
         );
 

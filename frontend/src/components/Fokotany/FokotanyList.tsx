@@ -302,7 +302,7 @@ export default function FokotanyList() {
     }, [data, isLoading, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon, mapCenter]);
     
     return (
-        <div className="p-6 flex flex-col items-center">
+        <div className=" flex flex-col items-center">
  {/* Barre de recherche */}
             <div className="w-full max-w-md mb-6 rounded-full">
                 <div className="relative">
@@ -319,20 +319,16 @@ export default function FokotanyList() {
 
             {/* Carte des fokotany */}
             {!isLoading && data && data.length > 0 && (
-                <div className="w-full max-w-6xl mb-6">
-                    <div>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MapPin className="h-5 w-5 text-red-500" />
-                                Carte des fokotany
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div 
-                                ref={mapContainerRef} 
-                                className="h-[400px] w-full border border-gray-200 rounded-xl overflow-hidden"
-                            />
-                        </CardContent>
+                <div className="w-full max-w-[95%] mb-6">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3 px-2">
+                            <MapPin className="h-5 w-5 text-red-500" />
+                            <h2 className="text-lg font-medium">Carte des fokotany</h2>
+                        </div>
+                        <div 
+                            ref={mapContainerRef} 
+                            className="h-[400px] w-full rounded-lg overflow-hidden"
+                        />
                     </div>
                 </div>
             )}
@@ -350,25 +346,25 @@ export default function FokotanyList() {
             )}
             
             {isLoading ? (
-                <Card className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center">
-                    <CardHeader>
+                <div className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center border border-gray-200 rounded-lg">
+                    <div className="mb-4">
                         <Loader2 className="w-12 h-12 text-gray-500 animate-spin mx-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <CardTitle className="text-gray-600">Chargement en cours...</CardTitle>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-600 mb-1">Chargement en cours...</h3>
                         <p className="text-gray-500">Veuillez patienter.</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             ) : !data || data.length === 0 ? (
-                <Card className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center">
-                    <CardHeader>
+                <div className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center border border-gray-200 rounded-lg">
+                    <div className="mb-4">
                         <AlertCircle className="w-12 h-12 text-gray-500 mx-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <CardTitle className="text-gray-600">Aucun fokotany trouvé</CardTitle>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-600 mb-1">Aucun fokotany trouvé</h3>
                         <p className="text-gray-500">Ajoutez un nouveau fokotany pour commencer.</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             ) : (
                 <>
                     {filteredData && filteredData.length === 0 && searchTerm && (

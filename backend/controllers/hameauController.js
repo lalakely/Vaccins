@@ -103,7 +103,7 @@ exports.countEnfantsInHameau = async (req, res) => {
 
     try {
         // Vérifier d'abord si le hameau existe
-        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE ID = ?", [hameauId]);
+        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE id = ?", [hameauId]);
         
         if (hameauResult.length === 0) {
             return res.status(404).json({ message: "Hameau non trouvé" });
@@ -131,7 +131,7 @@ exports.countVaccinatedEnfantsInHameau = async (req, res) => {
 
     try {
         // Vérifier d'abord si le hameau existe
-        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE ID = ?", [hameauId]);
+        const [hameauResult] = await db.query("SELECT * FROM Hameau WHERE id = ?", [hameauId]);
         
         if (hameauResult.length === 0) {
             return res.status(404).json({ message: "Hameau non trouvé" });

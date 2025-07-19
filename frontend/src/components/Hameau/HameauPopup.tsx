@@ -202,7 +202,7 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
   if (!hameau) return null;
 
   const handleDelete = async () => {
-    if (!hameau?.ID && !hameau?.id) return;
+    if (!hameau?.id) return;
 
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer le hameau "${hameau.Nom}" ?`)) {
       return;
@@ -215,7 +215,7 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      await axios.delete(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}`, {
+      await axios.delete(`http://localhost:3000/api/hameau/${hameau.id}`, {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes
       });
@@ -225,9 +225,14 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
       showSuccess("Suppression réussie", `Le hameau ${hameau.Nom} a été supprimé avec succès`, {
         actionLink: "/Hameau",
         entityType: "hameau",
-        entityId: hameau.ID || hameau.id
+        entityId: hameau.id
       });
       onClose();
+      
+      // Rafraîchir la page après une courte pause pour permettre à la notification de s'afficher
+      setTimeout(() => {
+        window.location.href = "/Hameau";
+      }, 500);
     } catch (error: any) {
       console.error("Erreur réseau :", error);
       

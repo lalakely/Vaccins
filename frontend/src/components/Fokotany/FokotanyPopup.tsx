@@ -181,6 +181,11 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
         entityId: fokotany.ID
       });
       onClose();
+      
+      // Rafraîchir la page après une courte pause pour permettre à la notification de s'afficher
+      setTimeout(() => {
+        window.location.href = "/Fokotany";
+      }, 500);
     } catch (error: any) {
       console.error("Erreur réseau :", error);
       

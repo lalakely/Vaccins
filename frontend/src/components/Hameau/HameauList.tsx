@@ -3,7 +3,6 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import HameauCard from "./HameauCard";
 import HameauPopup from "./HameauPopup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Loader2, WifiOff, Search, MapPin } from "lucide-react"; // Icônes pour affichage vide et chargement
 import { Input } from "@/components/ui/input";
@@ -13,8 +12,7 @@ import "leaflet/dist/leaflet.css";
 
 // Définir l'interface pour un Hameau
 interface Hameau {
-    ID?: number;
-    id?: number;
+    id: number;
     Nom: string;
     px: number;
     py: number;
@@ -40,6 +38,15 @@ export default function HameauList() {
     // Référence pour la carte Leaflet
     const mapRef = useRef<L.Map | null>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    
+    // Configuration des icônes Leaflet pour éviter les problèmes avec webpack
+    useEffect(() => {
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+        });
+    }, []);
 
     useEffect(() => {
         const fetchHameaux = async () => {
@@ -170,13 +177,7 @@ export default function HameauList() {
     }), []);
     
     // Fix pour les icônes Leaflet dans React
-    useEffect(() => {
-        L.Icon.Default.mergeOptions({
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-        });
-    }, []);
+    // Supprimé car nous avons déjà configuré les icônes en dehors du useEffect
     
     // Initialisation et gestion de la carte
     useEffect(() => {
@@ -207,11 +208,13 @@ export default function HameauList() {
                         Math.round(((hameau.nombre_enfant_vaccines || 0) / hameau.nombre_enfant) * 100) : 0;
                     
                     // Sélectionner l'icône en fonction de la couverture vaccinale
-                    let icon = goodCoverageIcon; // Par défaut, bonne couverture
+                    let icon;
                     if (vaccinationCoverage < 50) {
-                        icon = lowCoverageIcon; // Faible couverture
+                        icon = lowCoverageIcon; // Faible couverture (rouge)
                     } else if (vaccinationCoverage < 75) {
-                        icon = mediumCoverageIcon; // Couverture moyenne
+                        icon = mediumCoverageIcon; // Couverture moyenne (orange)
+                    } else {
+                        icon = goodCoverageIcon; // Bonne couverture (vert)
                     }
                     
                     // Ajouter le marqueur à la carte
@@ -248,7 +251,7 @@ export default function HameauList() {
     }, [data, loading, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon, mapCenter]);
     
     return (
-        <div className="p-6 flex flex-col items-center">
+        <div className="flex flex-col items-center">
              {/* Barre de recherche */}
              <div className="w-full max-w-md mb-6 rounded-full">
                 <div className="relative">
@@ -264,20 +267,16 @@ export default function HameauList() {
             </div>
             {/* Carte des hameaux */}
             {!loading && data && data.length > 0 && (
-                <div className="w-full max-w-6xl mb-6">
-                    <div>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MapPin className="h-5 w-5 text-green-500" />
-                                Carte des hameaux
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div 
-                                ref={mapContainerRef} 
-                                className="h-[400px] w-full border border-gray-200 rounded-xl overflow-hidden"
-                            />
-                        </CardContent>
+                <div className="w-full max-w-[95%] mb-6">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3 px-2">
+                            <MapPin className="h-5 w-5 text-green-500" />
+                            <h2 className="text-lg font-medium">Carte des hameaux</h2>
+                        </div>
+                        <div 
+                            ref={mapContainerRef} 
+                            className="h-[400px] w-full rounded-lg overflow-hidden"
+                        />
                     </div>
                 </div>
             )}
@@ -290,41 +289,41 @@ export default function HameauList() {
                 </Badge>
             )}
             {loading ? (
-                <Card className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center">
-                    <CardHeader>
+                <div className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center border border-gray-200 rounded-lg">
+                    <div className="mb-4">
                         <Loader2 className="w-12 h-12 text-gray-500 animate-spin mx-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <CardTitle className="text-gray-600">Chargement en cours...</CardTitle>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-600 mb-1">Chargement en cours...</h3>
                         <p className="text-gray-500">Veuillez patienter.</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             ) : data.length === 0 ? (
-                <Card className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center">
-                    <CardHeader>
+                <div className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center border border-gray-200 rounded-lg">
+                    <div className="mb-4">
                         <AlertCircle className="w-12 h-12 text-gray-500 mx-auto" />
-                    </CardHeader>
-                    <CardContent>
-                        <CardTitle className="text-gray-600">Aucun hameau trouvé</CardTitle>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-600 mb-1">Aucun hameau trouvé</h3>
                         <p className="text-gray-500">Ajoutez un nouveau hameau pour commencer.</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             ) : (
                 <>
                     {filteredData.length === 0 && searchTerm && (
                         <div className="w-full flex justify-center mb-6">
-                            <Card className="w-full max-w-md p-4 text-center">
-                                <CardContent className="flex flex-col items-center pt-4">
+                            <div className="w-full max-w-md p-4 text-center border border-gray-200 rounded-lg">
+                                <div className="flex flex-col items-center py-2">
                                     <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
                                     <p className="text-gray-700">Aucun hameau ne correspond à votre recherche</p>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </div>
                         </div>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filteredData.map((hameau) => (
                             <HameauCard 
-                                key={hameau.ID || hameau.id}
+                                key={hameau.id}
                                 hameau={hameau}
                                 onDetailsClick={handleDetailsClick}
                             />

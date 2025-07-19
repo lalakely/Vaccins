@@ -75,7 +75,7 @@ export default function VaccineList() {
     }, [data, searchTerm]);
 
     return (
-        <div className="p-6 flex flex-col items-center">
+        <div className=" flex flex-col items-center">
             {/* Barre de recherche */}
             <div className="w-full max-w-md mb-6 rounded-full">
                 <div className="relative">
