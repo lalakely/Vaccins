@@ -108,24 +108,57 @@ exports.createVaccination = async (req, res) => {
     const { enfant_id, vaccin_id, date_vaccination } = req.body;
     
     try {
+        // Vérifier si le vaccin existe, s'il est périmé et s'il a du stock disponible
+        const [vaccineInfo] = await db.query(
+            'SELECT id, Nom, Stock, Date_peremption FROM Vaccins WHERE id = ?',
+            [vaccin_id]
+        );
+        
+        // Vérifier si le vaccin existe
+        if (vaccineInfo.length === 0) {
+            return res.status(404).json({ message: 'Vaccin non trouvé' });
+        }
+        
+        const vaccin = vaccineInfo[0];
+        const today = new Date();
+        const peremptionDate = vaccin.Date_peremption ? new Date(vaccin.Date_peremption) : null;
+        
+        // Vérifier si le vaccin est périmé
+        if (peremptionDate && peremptionDate < today) {
+            return res.status(400).json({ 
+                message: 'Ce vaccin est périmé et ne peut pas être administré',
+                peremption: peremptionDate
+            });
+        }
+        
+        // Vérifier si le stock est suffisant
+        if (vaccin.Stock <= 0) {
+            return res.status(400).json({ 
+                message: 'Le stock de ce vaccin est épuisé',
+                stock: vaccin.Stock
+            });
+        }
+        
         // Insérer la vaccination
         const [result] = await db.query(
             'INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination) VALUES (?, ?, ?)',
             [enfant_id, vaccin_id, date_vaccination]
         );
         
-        // Récupérer le nom du vaccin
-        const [vaccineResult] = await db.query('SELECT Nom FROM Vaccins WHERE id = ?', [vaccin_id]);
-        const vaccineName = vaccineResult.length > 0 ? vaccineResult[0].Nom : 'Non spécifié';
+        // Mettre à jour le stock du vaccin
+        await db.query(
+            'UPDATE Vaccins SET Stock = Stock - 1 WHERE id = ? AND Stock > 0',
+            [vaccin_id]
+        );
         
         res.status(201).json({
             id: result.insertId,
             enfant_id,
             vaccin_id,
             date_vaccination,
-            name: vaccineName  
+            name: vaccin.Nom,
+            newStock: vaccin.Stock - 1
         });
-        
         
     } catch (err) {
         console.error('Error creating vaccination:', err);
@@ -313,6 +346,37 @@ exports.markRappelAdministered = async (req, res) => {
         
         console.log('markRappelAdministered - Données reçues:', req.body);
         
+        // Vérifier si le vaccin de rappel existe, s'il est périmé et s'il a du stock disponible
+        const [rappelVaccinInfo] = await db.query(
+            'SELECT id, Nom, Stock, Date_peremption FROM Vaccins WHERE id = ?',
+            [rappel_vaccin_id]
+        );
+        
+        // Vérifier si le vaccin de rappel existe
+        if (rappelVaccinInfo.length === 0) {
+            return res.status(404).json({ message: 'Vaccin de rappel non trouvé' });
+        }
+        
+        const rappelVaccin = rappelVaccinInfo[0];
+        const today = new Date();
+        const peremptionDate = rappelVaccin.Date_peremption ? new Date(rappelVaccin.Date_peremption) : null;
+        
+        // Vérifier si le vaccin est périmé
+        if (peremptionDate && peremptionDate < today) {
+            return res.status(400).json({ 
+                message: 'Ce vaccin de rappel est périmé et ne peut pas être administré',
+                peremption: peremptionDate
+            });
+        }
+        
+        // Vérifier si le stock est suffisant
+        if (rappelVaccin.Stock <= 0) {
+            return res.status(400).json({ 
+                message: 'Le stock de ce vaccin de rappel est épuisé',
+                stock: rappelVaccin.Stock
+            });
+        }
+        
         // Vérifier si le vaccin parent existe dans la table Vaccins
         const [parentVaccinExists] = await db.query('SELECT id FROM Vaccins WHERE id = ?', [parent_vaccin_id]);
         if (parentVaccinExists.length === 0) {
@@ -380,18 +444,24 @@ exports.markRappelAdministered = async (req, res) => {
             vaccin_id: rappel_vaccin_id, 
             date_vaccination: date_administration, // Utiliser date_administration comme date_vaccination
             date_administration, 
-            statut: 'administré',
             remarque
         });
         
         const [result] = await db.query(`
-            INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination, date_administration, statut, remarque)
-            VALUES (?, ?, ?, ?, 'administré', ?)
+            INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination, date_administration, remarque)
+            VALUES (?, ?, ?, ?, ?)
         `, [enfant_id, rappel_vaccin_id, date_administration, date_administration, remarque]);
+        
+        // Mettre à jour le stock du vaccin de rappel
+        await db.query(
+            'UPDATE Vaccins SET Stock = Stock - 1 WHERE id = ? AND Stock > 0',
+            [rappel_vaccin_id]
+        );
         
         res.status(201).json({ 
             message: 'Rappel marqué comme administré avec succès',
-            id: result.insertId
+            id: result.insertId,
+            newStock: rappelVaccin.Stock - 1
         });
     } catch (err) {
         console.error('Error marking rappel as administered:', err);
@@ -552,7 +622,7 @@ exports.checkAllRappelsAdministered = async (req, res) => {
         const [administeredCount] = await db.query(`
             SELECT COUNT(*) as count 
             FROM Vaccinations 
-            WHERE enfant_id = ? AND vaccin_id = ? AND statut = 'administré'
+            WHERE enfant_id = ? AND vaccin_id = ?
         `, [enfant_id, vaccin_id]);
         
         // 2. Vérifier combien de rappels sont prévus pour ce vaccin (dans VaccinSuite)

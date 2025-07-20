@@ -20,4 +20,7 @@ router.get('/vaccins/:id/pre-suites', vaccinController.getVaccinPreSuites);  // 
 // Route pour les rappels d'un vaccin
 router.get('/vaccins/:id/rappels', vaccinController.getVaccinRappels);       // Rappels du vaccin
 
+// Route pour mettre à jour le stock d'un vaccin
+router.put('/vaccins/:id/update-stock', vaccinController.updateVaccinStock);  // Mise à jour du stock
+
 module.exports= router;

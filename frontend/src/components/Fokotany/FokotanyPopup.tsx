@@ -166,7 +166,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      await axios.delete(buildApiUrl(`fokotany/${fokotany.ID}`), {
+      await axios.delete(buildApiUrl(`/api/fokotany/${fokotany.ID}`), {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes
       });

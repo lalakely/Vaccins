@@ -442,3 +442,29 @@ exports.updateVaccin = async (req, res) => {
         connection.release();
     }
 };
+
+// Update Vaccine Stock
+exports.updateVaccinStock = async (req, res) => {
+    const { id } = req.params;
+    const { newStock } = req.body;
+    
+    // Vérifier que le stock est un nombre valide
+    if (newStock === undefined || isNaN(parseInt(newStock)) || parseInt(newStock) < 0) {
+        return res.status(400).json({ message: 'Le stock doit être un nombre positif ou nul' });
+    }
+    
+    try {
+        // Mettre à jour uniquement le stock du vaccin
+        const sql = 'UPDATE Vaccins SET Stock = ? WHERE id = ?';
+        const [result] = await db.query(sql, [parseInt(newStock), id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Vaccin non trouvé' });
+        }
+        
+        res.json({ message: 'Stock mis à jour avec succès', newStock: parseInt(newStock) });
+    } catch (err) {
+        console.error('Erreur lors de la mise à jour du stock:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+};

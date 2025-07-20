@@ -55,7 +55,7 @@ export default function HameauList() {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
                 
-                const response = await axios.get(buildApiUrl("hameau"), {
+                const response = await axios.get(buildApiUrl("/api/hameau"), {
                     signal: controller.signal,
                     timeout: 5000 // Timeout de 5 secondes (redondant avec AbortController mais plus sûr)
                 });
@@ -260,8 +260,12 @@ export default function HameauList() {
             });
             
             // Ajuster la vue pour inclure tous les marqueurs si nous avons des coordonnées valides
-            if (validCoordinates.length > 0) {
-                mapRef.current.fitBounds(L.latLngBounds(validCoordinates));
+            if (validCoordinates.length > 0 && mapRef.current && mapRef.current.getContainer() && document.body.contains(mapRef.current.getContainer())) {
+                try {
+                    mapRef.current.fitBounds(L.latLngBounds(validCoordinates));
+                } catch (error) {
+                    console.warn("Erreur lors de l'ajustement de la vue de la carte:", error);
+                }
             }
         }
     }, [filteredData, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon]);

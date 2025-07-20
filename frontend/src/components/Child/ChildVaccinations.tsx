@@ -435,6 +435,20 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       // Afficher un indicateur de chargement
       setIsLoading(true);
       
+      // Récupérer d'abord les informations du vaccin de rappel pour vérifier le stock
+      const vaccineInfoResponse = await fetch(buildApiUrl(`/api/vaccins/${rappelVaccinId}`));
+      
+      if (!vaccineInfoResponse.ok) {
+        throw new Error("Erreur lors de la récupération des informations du vaccin de rappel");
+      }
+      
+      const vaccineInfo = await vaccineInfoResponse.json();
+      
+      // Vérifier si le stock est suffisant
+      if (vaccineInfo.Stock <= 0) {
+        throw new Error("Stock insuffisant pour ce vaccin de rappel");
+      }
+      
       // Appel API pour marquer le rappel comme administré
       const response = await fetch(buildApiUrl(`/api/vaccinations/mark-rappel-administered`), {
         method: "POST",
@@ -446,6 +460,22 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
           date_administration: new Date().toISOString().split("T")[0],
         }),
       });
+      
+      // Si l'administration a réussi, diminuer le stock
+      if (response.ok) {
+        // Mettre à jour le stock du vaccin
+        const updateStockResponse = await fetch(buildApiUrl(`/api/vaccins/${rappelVaccinId}/update-stock`), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newStock: vaccineInfo.Stock - 1
+          }),
+        });
+        
+        if (!updateStockResponse.ok) {
+          console.error("Erreur lors de la mise à jour du stock du vaccin de rappel");
+        }
+      }
 
       if (!response.ok) {
         throw new Error("Erreur lors de la mise à jour du rappel");
@@ -702,6 +732,20 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             date_administration: new Date().toISOString().split("T")[0],
           });
           
+          // Récupérer d'abord les informations du vaccin de rappel pour vérifier le stock
+          const vaccineInfoResponse = await fetch(buildApiUrl(`/api/vaccins/${selectedVaccine}`));
+          
+          if (!vaccineInfoResponse.ok) {
+            throw new Error("Erreur lors de la récupération des informations du vaccin de rappel");
+          }
+          
+          const vaccineInfo = await vaccineInfoResponse.json();
+          
+          // Vérifier si le stock est suffisant
+          if (vaccineInfo.Stock <= 0) {
+            throw new Error("Stock insuffisant pour ce vaccin de rappel");
+          }
+          
           const response = await fetch(buildApiUrl(`/api/vaccinations/mark-rappel-administered`), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -712,6 +756,22 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               date_administration: new Date().toISOString().split("T")[0],
             }),
           });
+          
+          // Si l'administration a réussi, diminuer le stock
+          if (response.ok) {
+            // Mettre à jour le stock du vaccin
+            const updateStockResponse = await fetch(buildApiUrl(`/api/vaccins/${selectedVaccine}/update-stock`), {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                newStock: vaccineInfo.Stock - 1
+              }),
+            });
+            
+            if (!updateStockResponse.ok) {
+              console.error("Erreur lors de la mise à jour du stock du vaccin de rappel");
+            }
+          }
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: "Erreur inconnue" }));
@@ -766,6 +826,21 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             return;
           }
           
+          // Récupérer d'abord les informations du vaccin pour vérifier le stock
+          const vaccineInfoResponse = await fetch(buildApiUrl(`/api/vaccins/${selectedVaccine}`));
+          
+          if (!vaccineInfoResponse.ok) {
+            throw new Error("Erreur lors de la récupération des informations du vaccin");
+          }
+          
+          const vaccineInfo = await vaccineInfoResponse.json();
+          
+          // Vérifier si le stock est suffisant
+          if (vaccineInfo.Stock <= 0) {
+            throw new Error("Stock insuffisant pour ce vaccin");
+          }
+          
+          // Administrer le vaccin
           const response = await fetch(buildApiUrl("/api/vaccinations"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -775,6 +850,22 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               date_vaccination: new Date().toISOString().split("T")[0],
             }),
           });
+          
+          // Si l'administration a réussi, diminuer le stock
+          if (response.ok) {
+            // Mettre à jour le stock du vaccin
+            const updateStockResponse = await fetch(buildApiUrl(`/api/vaccins/${selectedVaccine}/update-stock`), {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                newStock: vaccineInfo.Stock - 1
+              }),
+            });
+            
+            if (!updateStockResponse.ok) {
+              console.error("Erreur lors de la mise à jour du stock du vaccin");
+            }
+          }
 
           if (!response.ok) {
             throw new Error("Erreur lors de l'ajout du vaccin");

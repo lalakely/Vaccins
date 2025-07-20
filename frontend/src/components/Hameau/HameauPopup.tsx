@@ -211,7 +211,7 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      await axios.delete(buildApiUrl(`hameau/${hameau.id}`), {
+      await axios.delete(buildApiUrl(`/api/hameau/${hameau.id}`), {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes
       });
