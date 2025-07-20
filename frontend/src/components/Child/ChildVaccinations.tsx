@@ -40,6 +40,7 @@ interface Rappel {
   description: string;
   id?: string;
   vaccin_id?: string;
+  administered?: boolean; // Ajout de la propriété pour indiquer si un rappel a été administré
 }
 
 import {
@@ -233,39 +234,86 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         
         setVaccineRappels(rappelsMap);
         
-        // Vérifier les rappels administrés
+        // Vérifier les rappels administrés avec la nouvelle logique basée sur le comptage
+        // Implémentation corrigée pour assurer la mise à jour correcte des rappels administrés
         const checkAdministeredRappels = async () => {
+          console.log("===== Début de la vérification des rappels administrés =====");
+          
+          // Créer une copie profonde de la carte des rappels pour éviter les références
+          const rappelsMapCopy = JSON.parse(JSON.stringify(rappelsMap));
           const administeredMap: {[key: string]: boolean[]} = {};
           
+          // CORRECTION: On efface d'abord tous les états "administered" existants
+          // pour éviter les problèmes de données persistantes incorrectes
           for (const vaccine of data) {
-            if (rappelsMap[vaccine.id] && rappelsMap[vaccine.id].length > 0) {
-              // Initialiser le tableau de statut des rappels pour ce vaccin
-              administeredMap[vaccine.id] = new Array(rappelsMap[vaccine.id].length).fill(false);
+            if (rappelsMapCopy[vaccine.id] && rappelsMapCopy[vaccine.id].length > 0) {
+              rappelsMapCopy[vaccine.id].forEach((rappel: Rappel) => {
+                rappel.administered = false; // Réinitialiser tous les rappels comme non administrés
+              });
+            }
+          }
+          
+          for (const vaccine of data) {
+            if (rappelsMapCopy[vaccine.id] && rappelsMapCopy[vaccine.id].length > 0) {
+              const rappelsCount = rappelsMapCopy[vaccine.id].length;
               
-              // Pour chaque rappel, vérifier s'il a été administré
-              for (let i = 0; i < rappelsMap[vaccine.id].length; i++) {
-                const rappel = rappelsMap[vaccine.id][i];
-                const rappelDate = new Date(vaccine.date_vaccination);
-                rappelDate.setDate(rappelDate.getDate() + rappel.delai);
+              // Initialiser les tableaux de statut des rappels
+              administeredMap[vaccine.vaccin_id] = new Array(rappelsCount).fill(false);
+              administeredMap[vaccine.id] = new Array(rappelsCount).fill(false);
+              
+              console.log(`Vérification des rappels pour le vaccin ${vaccine.name || vaccine.Nom} (vaccin_id: ${vaccine.vaccin_id}, id: ${vaccine.id})`);
+              
+              try {
+                // CORRECTION: Utiliser une requête avec await fetch
+                const rappelCheckResponse = await fetch(
+                  buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}`)
+                );
                 
-                // Vérifier si ce rappel a été administré (si un vaccin avec le même nom existe et a été administré après la date du rappel)
-                try {
-                  const rappelCheckResponse = await fetch(
-                    buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}&date_rappel=${rappelDate.toISOString().split('T')[0]}`)
-                  );
+                if (rappelCheckResponse.ok) {
+                  const checkResult = await rappelCheckResponse.json();
+                  const totalAdministrations = checkResult.totalAdministrations || 0;
+                  const rappelsAdministered = checkResult.rappelsAdministered || 0;
                   
-                  if (rappelCheckResponse.ok) {
-                    const checkResult = await rappelCheckResponse.json();
-                    administeredMap[vaccine.id][i] = checkResult.administered;
+                  console.log(`***** DIAGNOSTIC: Vaccin ${vaccine.name || vaccine.Nom}: ${totalAdministrations} administrations totales, ${rappelsAdministered} rappels administrés *****`);
+                  
+                  // LOGIQUE CORRIGÉE selon la demande utilisateur:
+                  // Si N administrations au total (incluant la dose initiale), alors seuls les N-1 premiers rappels sont administrés
+                  for (let i = 0; i < rappelsCount; i++) {
+                    // Règle corrigée: L'index du rappel doit être STRICTEMENT inférieur au nombre de rappels administrés
+                    // Exemple: 2 administrations total (1 dose + 1 rappel) => seul le rappel d'index 0 est administré
+                    const isAdministered = i < rappelsAdministered;
+                    
+                    // Définir explicitement la valeur
+                    administeredMap[vaccine.vaccin_id][i] = isAdministered;
+                    administeredMap[vaccine.id][i] = isAdministered;
+                    
+                    // Stocker directement dans la copie
+                    if (rappelsMapCopy[vaccine.id][i]) {
+                      rappelsMapCopy[vaccine.id][i].administered = isAdministered;
+                    }
+                    
+                    const rappelDelay = rappelsMapCopy[vaccine.id][i]?.delai || 'inconnu';
+                    console.log(`Vaccin ${vaccine.name || vaccine.Nom} (${totalAdministrations} administrations): Rappel J+${rappelDelay} (index ${i}) => ${isAdministered ? 'ADMINISTRÉ' : 'NON ADMINISTRÉ'}`);
                   }
-                } catch (err) {
-                  console.error(`Erreur lors de la vérification du rappel pour le vaccin ${vaccine.id}:`, err);
+                } else {
+                  console.error(`Erreur lors de la vérification des rappels: ${rappelCheckResponse.status}`);
                 }
+              } catch (err) {
+                console.error(`Erreur lors de la vérification des rappels pour le vaccin ${vaccine.vaccin_id}:`, err);
               }
             }
           }
           
-          setAdministeredRappels(administeredMap);
+          // CORRECTION: Mettre à jour complètement les états avec des nouvelles références
+          console.log('===== Mise à jour des states avec les données calculées =====');
+          console.log('Nouvelle carte des rappels administrés:', administeredMap);
+          console.log('Rappels avec la propriété administered mise à jour:', rappelsMapCopy);
+          
+          // Mise à jour atomique des états pour éviter les problèmes de rendu
+          setAdministeredRappels({...administeredMap});
+          setVaccineRappels({...rappelsMapCopy});
+          
+          console.log("===== Fin de la vérification des rappels administrés =====");
         };
         
         checkAdministeredRappels();
@@ -1055,7 +1103,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               </div>
             ) : (
               <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
                   {groupVaccinesByType(vaccines).map((groupedVaccine) => (
                     <div
                       key={`administered-${groupedVaccine.vaccine.id}`}
@@ -1093,8 +1141,17 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                               const isRappelDue = new Date() >= rappelDate;
                               const isToday = new Date().toDateString() === rappelDate.toDateString();
                               
-                              // Vérifier si le rappel a été administré
-                              const isRappelAdministered = administeredRappels[groupedVaccine.vaccine.id] && administeredRappels[groupedVaccine.vaccine.id][index];
+                              // LOGIQUE SIMPLIFIÉE CORRIGÉE:
+                              // Utiliser UNIQUEMENT la propriété 'administered' définie sur l'objet rappel
+                              // Cette propriété est définie dans checkAdministeredRappels selon la règle métier précise
+                              const isRappelAdministered = rappel.administered === true;
+                              
+                              // Log pour le débogage
+                              console.log(`Affichage rappel ${index+1} (J+${rappel.delai}) du vaccin ${groupedVaccine.vaccine.name || groupedVaccine.vaccine.Nom} - administré: ${isRappelAdministered}`, {
+                                rappel_id: rappel.id,
+                                vaccin_id: rappel.vaccin_id,
+                                administered: rappel.administered
+                              });
                               
                               // Définir les couleurs et styles en fonction de l'état du rappel
                               let bgColor = isRappelAdministered ? 'bg-green-50' : isRappelDue ? 'bg-yellow-50' : isToday ? 'bg-yellow-50' : 'bg-blue-50';

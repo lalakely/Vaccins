@@ -78,7 +78,9 @@ exports.createVaccin = async (req, res) => {
                 for (const suite of req.body.SuiteVaccins) {
                     // Gérer le cas spécial des rappels (id = -1)
                     const suiteId = suite.id === -1 ? newVaccinId : suite.id;
-                    const type = suite.type || (suite.strict ? 'strict' : 'recommande');
+                    // Limiter la valeur de type à 'r' pour rappel, 's' pour strict, ou 'n' pour normal/recommandé
+const typeValue = suite.type || (suite.strict ? 'strict' : 'recommande');
+const type = typeValue === 'rappel' ? 'r' : (typeValue === 'strict' ? 's' : 'n');
                     const delai = suite.delai || 0;
                     const strict = suite.strict || false;
                     const description = suite.description || null;
@@ -391,7 +393,9 @@ exports.updateVaccin = async (req, res) => {
                     // Déterminer si nous avons un objet complet ou juste un id
                     if (typeof suite === 'object') {
                         const suiteId = suite.id === -1 ? vaccinId : suite.id;
-                        const type = suite.type || (suite.strict ? 'strict' : 'recommande');
+                        // Limiter la valeur de type à 'r' pour rappel, 's' pour strict, ou 'n' pour normal/recommandé
+const typeValue = suite.type || (suite.strict ? 'strict' : 'recommande');
+const type = typeValue === 'rappel' ? 'r' : (typeValue === 'strict' ? 's' : 'n');
                         const delai = suite.delai || 0;
                         const isStrict = !!suite.strict;
                         const description = suite.description || null;
@@ -421,7 +425,7 @@ exports.updateVaccin = async (req, res) => {
                     await connection.query(rappelSql, [
                         vaccinId, 
                         vaccinId, 
-                        'rappel', 
+                        'r', // 'r' pour rappel, format court compatible avec la colonne
                         rappel.delai || 0, 
                         true, 
                         rappel.description || null

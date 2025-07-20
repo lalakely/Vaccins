@@ -9,9 +9,14 @@ router.use(authenticate);
 // Routes pour les notifications
 router.get('/', notificationsController.getNotifications);
 router.post('/', notificationsController.createNotification);
-router.patch('/:id/read', notificationsController.markAsRead);
+
+// Routes statiques (doivent être définies avant les routes paramétriques)
 router.patch('/read-all', notificationsController.markAllAsRead);
-router.delete('/:id', notificationsController.deleteNotification);
+router.delete('/all', notificationsController.deleteAllNotifications);
 router.post('/clean-expired', notificationsController.cleanExpiredNotifications);
+
+// Routes paramétriques
+router.patch('/:id/read', notificationsController.markAsRead);
+router.delete('/:id', notificationsController.deleteNotification);
 
 module.exports = router;

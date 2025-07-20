@@ -160,7 +160,45 @@ const ChildPrintView: React.FC<ChildPrintViewProps> = ({
                       {rappels.length > 0 ? (
                         <div className="space-y-1">
                           {rappels.map((rappel, index) => {
-                            const isAdministered = administeredRappels[vaccine.id]?.[index] || false;
+                            // LOGIQUE BASÉE SUR L'ORDRE DES RAPPELS
+                            // Un rappel est administré si son index est inférieur au nombre de rappels administrés
+                            
+                            // Initialiser à false
+                            let isAdministered = false;
+                            
+                            // Priorité 1: Utiliser la propriété administré directement sur l'objet rappel
+                            // Cette propriété est définie par ChildVaccinations.tsx et reflète l'ordre des rappels
+                            if (rappel.administered !== undefined) {
+                              isAdministered = rappel.administered;
+                              console.log(`Rappel ${index+1} utilisant rappel.administered: ${isAdministered}`);
+                            } 
+                            // Priorité 2: Vérifier dans administeredRappels avec vaccin_id
+                            else if (administeredRappels[vaccine.vaccin_id]?.[index] !== undefined) {
+                              isAdministered = administeredRappels[vaccine.vaccin_id][index];
+                              console.log(`Rappel ${index+1} utilisant administeredRappels[vaccin_id]: ${isAdministered}`);
+                            }
+                            // Priorité 3: Vérifier dans administeredRappels avec id
+                            else if (administeredRappels[vaccine.id]?.[index] !== undefined) {
+                              isAdministered = administeredRappels[vaccine.id][index];
+                              console.log(`Rappel ${index+1} utilisant administeredRappels[id]: ${isAdministered}`);
+                            }
+                            
+                            // Vérifications supplémentaires pour la robustesse
+                            
+                            // Vérifier d'après le texte de la description si nécessaire
+                            const description = rappel.description || '';
+                            if (!isAdministered && (description.toLowerCase().includes('administré') || 
+                                description.toLowerCase().includes('fait'))) {
+                              isAdministered = true;
+                              console.log(`Rappel ${index+1} marqué administré via texte description`);
+                            }
+                            
+                            // Journalisation détaillée pour débogage
+                            console.log(`Rappel ${index+1} du vaccin ${vaccine.name || vaccine.Nom} - administré: ${isAdministered}`, {
+                              rappelIndex: index,
+                              rappelDelai: rappel.delai,
+                              vaccineId: vaccine.vaccin_id || vaccine.id,
+                            });
                             
                             return (
                               <div key={`rappel-${index}`} className="flex items-center gap-1">

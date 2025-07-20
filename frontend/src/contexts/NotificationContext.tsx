@@ -369,7 +369,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
         
-        await axios.delete(buildApiUrl('/api/notifications'), {
+        await axios.delete(buildApiUrl('/api/notifications/all'), {
           headers: {
             Authorization: `Bearer ${token}`
           },

@@ -305,25 +305,69 @@ exports.checkVaccinePrerequisites = async (req, res) => {
 
 // Check if a rappel has been administered
 exports.checkRappelAdministered = async (req, res) => {
-    const { enfant_id, vaccin_id, date_rappel } = req.query;
+    const { enfant_id, vaccin_id, rappel_index } = req.query;
     
-    if (!enfant_id || !vaccin_id || !date_rappel) {
-        return res.status(400).json({ message: 'Paramètres manquants: enfant_id, vaccin_id et date_rappel sont requis' });
+    if (!enfant_id || !vaccin_id) {
+        return res.status(400).json({ message: 'Paramètres manquants: enfant_id et vaccin_id sont requis' });
     }
     
     try {
-        // Vérifier si un vaccin du même type a été administré après la date du rappel
-        const [results] = await db.query(`
+        // Nouvelle logique: compter le nombre d'administrations pour ce vaccin à cet enfant
+        const [administrations] = await db.query(`
             SELECT COUNT(*) as count
             FROM Vaccinations v
             WHERE v.enfant_id = ?
             AND v.vaccin_id = ?
-            AND v.date_vaccination >= ?
-        `, [enfant_id, vaccin_id, date_rappel]);
+        `, [enfant_id, vaccin_id]);
         
-        const administered = results[0].count > 0;
+        // Nombre total d'administrations (incluant la première dose)
+        const totalAdministrations = administrations[0].count;
         
-        res.json({ administered });
+        // Calcul du nombre de rappels administrés: nombre d'administrations - 1 (première dose)
+        const rappelsAdministered = Math.max(0, totalAdministrations - 1);
+        
+        // Si rappel_index est fourni, vérifier si ce rappel spécifique est administré
+        let administered = false;
+        if (rappel_index !== undefined) {
+            // L'index du rappel est 0-based, donc rappel_index = 0 est le premier rappel
+            // Il est administré si le nombre de rappels administrés est supérieur à l'index
+            administered = rappelsAdministered > parseInt(rappel_index);
+        } else {
+            // Ancienne logique en fallback (basée sur la date)
+            const { date_rappel } = req.query;
+            if (!date_rappel) {
+                return res.status(400).json({ message: 'Paramètre date_rappel manquant' });
+            }
+            
+            // Méthode 1: Vérifier si un vaccin du même type a été administré après la date du rappel
+            const [directResults] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM Vaccinations v
+                WHERE v.enfant_id = ?
+                AND v.vaccin_id = ?
+                AND v.date_vaccination >= ?
+            `, [enfant_id, vaccin_id, date_rappel]);
+            
+            // Méthode 2: Vérifier si un rappel a été enregistré dans la remarque d'une vaccination
+            const [rappelResults] = await db.query(`
+                SELECT COUNT(*) as count
+                FROM Vaccinations v
+                WHERE v.enfant_id = ?
+                AND v.remarque LIKE ?
+            `, [enfant_id, `%Rappel du vaccin ${vaccin_id}%`]);
+            
+            // Le rappel est administré si l'une des deux méthodes trouve un résultat
+            administered = directResults[0].count > 0 || rappelResults[0].count > 0;
+        }
+        
+        console.log(`checkRappelAdministered - enfant_id: ${enfant_id}, vaccin_id: ${vaccin_id}, rappel_index: ${rappel_index}, administered: ${administered}`);
+        console.log(`  - Total administrations: ${totalAdministrations}, Rappels effectués: ${rappelsAdministered}`);
+        
+        res.json({ 
+            administered, 
+            totalAdministrations, 
+            rappelsAdministered 
+        });
     } catch (err) {
         console.error('Error checking if rappel has been administered:', err);
         res.status(500).json({ message: 'Erreur interne du serveur' });
@@ -399,7 +443,7 @@ exports.markRappelAdministered = async (req, res) => {
         
         const [suiteCheck] = await db.query(`
             SELECT * FROM VaccinSuite 
-            WHERE vaccin_id = ? AND suite_id = ? AND type = 'rappel'
+            WHERE vaccin_id = ? AND suite_id = ? AND type = 'r'
         `, [rappel_vaccin_id, rappel_vaccin_id]);
         
         console.log('markRappelAdministered - Résultat de la recherche:', suiteCheck);
@@ -410,7 +454,7 @@ exports.markRappelAdministered = async (req, res) => {
             // Essayer de trouver si le vaccin est un rappel (même s'il n'est pas auto-référencé)
             const [anyRappelCheck] = await db.query(`
                 SELECT * FROM VaccinSuite 
-                WHERE (vaccin_id = ? OR suite_id = ?) AND type = 'rappel'
+                WHERE (vaccin_id = ? OR suite_id = ?) AND type = 'r'
             `, [rappel_vaccin_id, rappel_vaccin_id]);
             
             console.log('markRappelAdministered - Résultat de la recherche générale:', anyRappelCheck);
@@ -425,7 +469,7 @@ exports.markRappelAdministered = async (req, res) => {
         const [parentVaccination] = await db.query(`
             SELECT id FROM Vaccinations 
             WHERE enfant_id = ? AND vaccin_id = ? 
-            ORDER BY date_administration DESC LIMIT 1
+            ORDER BY date_vaccination DESC LIMIT 1
         `, [enfant_id, parent_vaccin_id]);
         
         console.log('markRappelAdministered - Vaccination parent:', parentVaccination);
@@ -443,14 +487,13 @@ exports.markRappelAdministered = async (req, res) => {
             enfant_id, 
             vaccin_id: rappel_vaccin_id, 
             date_vaccination: date_administration, // Utiliser date_administration comme date_vaccination
-            date_administration, 
             remarque
         });
         
         const [result] = await db.query(`
-            INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination, date_administration, remarque)
-            VALUES (?, ?, ?, ?, ?)
-        `, [enfant_id, rappel_vaccin_id, date_administration, date_administration, remarque]);
+            INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination, remarque)
+            VALUES (?, ?, ?, ?)
+        `, [enfant_id, rappel_vaccin_id, date_administration, remarque]);
         
         // Mettre à jour le stock du vaccin de rappel
         await db.query(

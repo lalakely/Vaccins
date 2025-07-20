@@ -262,6 +262,27 @@ exports.createSystemNotification = async (eventType, data) => {
   }
 };
 
+// Supprimer toutes les notifications d'un utilisateur
+exports.deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Supprimer toutes les notifications de l'utilisateur
+    const [result] = await db.query(
+      'DELETE FROM notifications WHERE user_id = ?',
+      [userId]
+    );
+    
+    res.json({ 
+      message: 'Toutes les notifications ont été supprimées', 
+      deletedCount: result.affectedRows 
+    });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de toutes les notifications:', error);
+    res.status(500).json({ message: 'Erreur serveur lors de la suppression des notifications' });
+  }
+};
+
 // Nettoyer les notifications expirées (peut être appelé par un cron job)
 exports.cleanExpiredNotifications = async (req, res) => {
   try {
