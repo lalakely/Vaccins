@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { buildApiUrl } from '../config/api';
 
 // Configuration de base pour tous les appels API
-const API_BASE_URL = 'http://localhost:3000';
 const DEFAULT_TIMEOUT = 5000; // 5 secondes par défaut
 const MAX_RETRIES = 2; // Nombre maximum de tentatives en cas d'échec
 
@@ -106,7 +106,7 @@ class ApiService {
     const requestConfig: AxiosRequestConfig = {
       ...config,
       method,
-      url: `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`,
+      url: buildApiUrl(url),
       headers,
       signal: controller.signal,
       timeout,

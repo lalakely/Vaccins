@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import axios from "axios";
 import { TrendingUp } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
+import { buildApiUrl } from "../../config/api";
 import {
   Card,
   CardContent,
@@ -17,7 +19,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import axios from "axios";
 
 interface VaccineCoverageChartProps {
   entityType: 'fokotany' | 'hameau';
@@ -37,6 +38,7 @@ function VaccineCoverageChart({ entityType, entityId, className = "" }: VaccineC
     },
   } satisfies ChartConfig;
 
+  
   React.useEffect(() => {
     const fetchData = async () => {
       if (!entityId) return;
@@ -47,7 +49,7 @@ function VaccineCoverageChart({ entityType, entityId, className = "" }: VaccineC
         // Récupération des vaccins avec gestion d'erreur
         let vaccins = [];
         try {
-          const vaccinsRes = await axios.get("http://localhost:3000/api/vaccins", {
+          const vaccinsRes = await axios.get(buildApiUrl("/api/vaccins"), {
             timeout: 5000 // Timeout de 5 secondes
           });
           vaccins = vaccinsRes.data || [];
@@ -64,7 +66,7 @@ function VaccineCoverageChart({ entityType, entityId, className = "" }: VaccineC
         while (retryCount <= maxRetries) {
           try {
             const vaccinationsRes = await axios.get(
-              `http://localhost:3000/api/${entityType}/${entityId}/vaccinations`,
+              buildApiUrl(`/api/${entityType}/${entityId}/vaccinations`),
               {
                 timeout: 5000 // Timeout de 5 secondes
               }

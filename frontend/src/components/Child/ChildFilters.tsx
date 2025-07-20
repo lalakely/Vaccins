@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Filter } from "lucide-react";
 import axios from "axios";
+import { buildApiUrl } from "../../config/api";
 import {
   FaUser,
   FaUserPlus,
@@ -60,7 +61,7 @@ export default function ChildFilters({
   useEffect(() => {
     // Récupérer la liste des vaccins lors du chargement du composant
     axios
-      .get("http://localhost:3000/api/vaccins")
+      .get(buildApiUrl("/api/vaccins"))
       .then((response) => {
         setVaccins(response.data);
       })

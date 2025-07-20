@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { buildApiUrl } from "../../config/api";
 import { format } from "date-fns";
 
 // Define interfaces for our data types
@@ -161,7 +162,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
     const fetchVaccines = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch("http://localhost:3000/api/vaccins", {
+        const response = await fetch(buildApiUrl("/api/vaccins"), {
           cache: "no-store",
         });
         const data = await response.json();
@@ -178,7 +179,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3000/api/vaccinations/child?enfant_id=${enfantId}`,
+          buildApiUrl(`/api/vaccinations/child?enfant_id=${enfantId}`),
           {
             cache: "no-store",
           }
@@ -192,7 +193,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         // Pour chaque vaccin, récupérer ses rappels
         const rappelsPromises = data.map(async (vaccine: Vaccine) => {
           try {
-            const rappelsResponse = await fetch(`http://localhost:3000/api/vaccins/${vaccine.vaccin_id}/rappels`);
+            const rappelsResponse = await fetch(buildApiUrl(`/api/vaccins/${vaccine.vaccin_id}/rappels`));
             if (rappelsResponse.ok) {
               const rappelsData = await rappelsResponse.json();
               return { vaccineId: vaccine.id, rappels: rappelsData };
@@ -233,7 +234,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 // Vérifier si ce rappel a été administré (si un vaccin avec le même nom existe et a été administré après la date du rappel)
                 try {
                   const rappelCheckResponse = await fetch(
-                    `http://localhost:3000/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}&date_rappel=${rappelDate.toISOString().split('T')[0]}`
+                    buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}&date_rappel=${rappelDate.toISOString().split('T')[0]}`)
                   );
                   
                   if (rappelCheckResponse.ok) {
@@ -263,7 +264,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3000/api/vaccinations/overdue?enfant_id=${enfantId}`,
+          buildApiUrl(`/api/vaccinations/overdue?enfant_id=${enfantId}`),
           {
             cache: "no-store",
           }
@@ -285,9 +286,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3000/api/vaccinations/upcoming?enfant_id=${enfantId}`,
-          { cache: "no-store" }
-        );
+          buildApiUrl(`/api/vaccinations/upcoming?enfant_id=${enfantId}`), {
+          cache: "no-store" 
+        });
         if (!response.ok) {
           throw new Error("Erreur lors de la requête au serveur");
         }
@@ -297,7 +298,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         // Pour chaque vaccin à suivre, récupérer ses rappels
         const rappelsPromises = data.map(async (vaccine: UpcomingVaccine) => {
           try {
-            const rappelsResponse = await fetch(`http://localhost:3000/api/vaccins/${vaccine.vaccin_id}/rappels`);
+            const rappelsResponse = await fetch(buildApiUrl(`/api/vaccins/${vaccine.vaccin_id}/rappels`));
             if (rappelsResponse.ok) {
               const rappelsData = await rappelsResponse.json();
               return { vaccineId: vaccine.id, rappels: rappelsData };
@@ -343,9 +344,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
     
     try {
       const response = await fetch(
-        `http://localhost:3000/api/vaccinations/check-prerequisites?vaccin_id=${vaccinId}&enfant_id=${enfantId}`,
-        { cache: "no-store" }
-      );
+        buildApiUrl(`/api/vaccinations/check-prerequisites?vaccin_id=${vaccinId}&enfant_id=${enfantId}`), {
+          cache: "no-store" 
+        });
       
       if (!response.ok) {
         throw new Error("Erreur lors de la vérification des prérequis");
@@ -366,9 +367,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const checkAllRappelsAdministered = async (vaccinId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/vaccinations/check-all-rappels-administered?enfant_id=${enfantId}&vaccin_id=${vaccinId}`,
-        { cache: "no-store" }
-      );
+        buildApiUrl(`/api/vaccinations/check-all-rappels-administered?enfant_id=${enfantId}&vaccin_id=${vaccinId}`), {
+          cache: "no-store" 
+        });
       
       if (!response.ok) {
         console.error("Erreur lors de la vérification des rappels administrés:", response.status);
@@ -412,9 +413,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
     try {
       // Vérifier si le vaccin est un rappel d'un vaccin existant
       const response = await fetch(
-        `http://localhost:3000/api/vaccinations/check-rappel-status?enfant_id=${enfantId}&vaccin_id=${vaccinId}`,
-        { cache: "no-store" }
-      );
+        buildApiUrl(`/api/vaccinations/check-rappel-status?enfant_id=${enfantId}&vaccin_id=${vaccinId}`), {
+          cache: "no-store" 
+        });
       
       if (!response.ok) {
         return { isRappel: false, parentVaccineId: null };
@@ -435,7 +436,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       setIsLoading(true);
       
       // Appel API pour marquer le rappel comme administré
-      const response = await fetch(`http://localhost:3000/api/vaccinations/mark-rappel-administered`, {
+      const response = await fetch(buildApiUrl(`/api/vaccinations/mark-rappel-administered`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -487,7 +488,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const checkMaxRappelsReached = async (vaccinId: string) => {
     try {
       // Récupérer le nombre de rappels prévus pour ce vaccin
-      const rappelsResponse = await fetch(`http://localhost:3000/api/vaccins/${vaccinId}/rappels`);
+      const rappelsResponse = await fetch(buildApiUrl(`/api/vaccins/${vaccinId}/rappels`));
       if (!rappelsResponse.ok) {
         throw new Error("Erreur lors de la récupération des rappels");
       }
@@ -496,7 +497,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       
       // Récupérer le nombre de fois que ce vaccin a été administré à l'enfant
       const administeredResponse = await fetch(
-        `http://localhost:3000/api/vaccinations/count?enfant_id=${enfantId}&vaccin_id=${vaccinId}`
+        buildApiUrl(`/api/vaccinations/count?enfant_id=${enfantId}&vaccin_id=${vaccinId}`)
       );
       if (!administeredResponse.ok) {
         throw new Error("Erreur lors de la récupération du nombre d'administrations");
@@ -523,9 +524,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       const fetchUpdatedOverdueVaccines = async () => {
         try {
           const overdueResponse = await fetch(
-            `http://localhost:3000/api/vaccinations/overdue?enfant_id=${enfantId}`,
-            { cache: "no-store" }
-          );
+            buildApiUrl(`/api/vaccinations/overdue?enfant_id=${enfantId}`), {
+          cache: "no-store" 
+        });
           if (overdueResponse.ok) {
             const overdueData = await overdueResponse.json();
             setOverdueVaccines(overdueData);
@@ -539,9 +540,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       const fetchUpdatedUpcomingVaccines = async () => {
         try {
           const upcomingResponse = await fetch(
-            `http://localhost:3000/api/vaccinations/upcoming?enfant_id=${enfantId}`,
-            { cache: "no-store" }
-          );
+            buildApiUrl(`/api/vaccinations/upcoming?enfant_id=${enfantId}`), {
+          cache: "no-store" 
+        });
           if (upcomingResponse.ok) {
             const upcomingData = await upcomingResponse.json();
             setUpcomingVaccines(upcomingData);
@@ -552,9 +553,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             for (const vaccine of upcomingData) {
               try {
                 const rappelsResponse = await fetch(
-                  `http://localhost:3000/api/vaccins/${vaccine.vaccin_id}/rappels`,
-                  { cache: "no-store" }
-                );
+                  buildApiUrl(`/api/vaccins/${vaccine.vaccin_id}/rappels`), {
+          cache: "no-store" 
+        });
                 
                 if (rappelsResponse.ok) {
                   const rappelsData = await rappelsResponse.json();
@@ -576,9 +577,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       const fetchUpdatedAdministeredVaccines = async () => {
         try {
           const response = await fetch(
-            `http://localhost:3000/api/vaccinations/child?enfant_id=${enfantId}`,
-            { cache: "no-store" }
-          );
+            buildApiUrl(`/api/vaccinations/child?enfant_id=${enfantId}`), {
+          cache: "no-store" 
+        });
           if (response.ok) {
             const data = await response.json();
             setVaccines(data);
@@ -586,7 +587,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             // Pour chaque vaccin, récupérer ses rappels
             const rappelsPromises = data.map(async (vaccine: Vaccine) => {
               try {
-                const rappelsResponse = await fetch(`http://localhost:3000/api/vaccins/${vaccine.vaccin_id}/rappels`);
+                const rappelsResponse = await fetch(buildApiUrl(`/api/vaccins/${vaccine.vaccin_id}/rappels`));
                 if (rappelsResponse.ok) {
                   const rappelsData = await rappelsResponse.json();
                   return { vaccineId: vaccine.id, rappels: rappelsData };
@@ -626,7 +627,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                   // Vérifier si ce rappel a été administré
                   try {
                     const rappelCheckResponse = await fetch(
-                      `http://localhost:3000/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}&date_rappel=${rappelDate.toISOString().split('T')[0]}`
+                      buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}&date_rappel=${rappelDate.toISOString().split('T')[0]}`)
                     );
                     
                     if (rappelCheckResponse.ok) {
@@ -701,7 +702,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             date_administration: new Date().toISOString().split("T")[0],
           });
           
-          const response = await fetch(`http://localhost:3000/api/vaccinations/mark-rappel-administered`, {
+          const response = await fetch(buildApiUrl(`/api/vaccinations/mark-rappel-administered`), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -765,7 +766,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             return;
           }
           
-          const response = await fetch("http://localhost:3000/api/vaccinations", {
+          const response = await fetch(buildApiUrl("/api/vaccinations"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -807,7 +808,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const handleDeleteVaccine = async (vaccineId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/vaccinations/${vaccineId}`,
+        buildApiUrl(`/api/vaccinations/${vaccineId}`),
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },

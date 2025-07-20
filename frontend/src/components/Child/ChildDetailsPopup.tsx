@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { buildApiUrl } from "../../config/api";
 import {
   XMarkIcon,
   UserIcon,
@@ -68,7 +69,7 @@ function ChildDetailsPopup({ enfant, onClose }: ChildDetailsPopupProps) {
 
       console.log("Données à envoyer avec la date formatée :", updatedFormData);
 
-      const response = await fetch(`http://localhost:3000/api/enfants/${updatedFormData.id}`, {
+      const response = await fetch(buildApiUrl(`/api/enfants/${updatedFormData.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedFormData),
@@ -101,7 +102,7 @@ function ChildDetailsPopup({ enfant, onClose }: ChildDetailsPopupProps) {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/enfants/${enfant.id}`, {
+      const response = await fetch(buildApiUrl(`/api/enfants/${enfant.id}`), {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
@@ -413,7 +414,7 @@ function ChildDetailsPopup({ enfant, onClose }: ChildDetailsPopupProps) {
 
         {/* Section ChildVaccinations */}
         <div className="w-full lg:flex-1">
-          <ChildVaccinations enfantId={enfant.id} />
+          <ChildVaccinations enfantId={enfant.id.toString()} />
         </div>
       </div>
     </div>

@@ -1,10 +1,11 @@
 import axios from "axios";
+import { buildApiUrl } from "../../config/api";
 import { useEffect, useState, useRef, useMemo } from "react";
 import HameauCard from "./HameauCard";
 import HameauPopup from "./HameauPopup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Loader2, WifiOff, Search, MapPin } from "lucide-react"; // Icônes pour affichage vide et chargement
+import { AlertCircle, Loader2, Search, MapPin } from "lucide-react"; // Icônes pour affichage vide et chargement
 import { Input } from "@/components/ui/input";
 import useNotificationService from "../../hooks/useNotificationService";
 import L from "leaflet";
@@ -27,7 +28,6 @@ export default function HameauList() {
     const [selectedHameau, setSelectedHameau] = useState<Hameau | null>(null);
     const [showPopup, setShowPopup] = useState(false);
     const [loading, setLoading] = useState(true); // Ajout de l'état de chargement
-    const [apiAvailable, setApiAvailable] = useState(true); // Indiquer si l'API est disponible
     const [searchTerm, setSearchTerm] = useState(""); // Ajout de l'état de recherche
     const { showError, showInfo } = useNotificationService();
     const notificationsShown = useRef<boolean>(false); // Pour suivre si les notifications ont déjà été affichées
@@ -55,13 +55,12 @@ export default function HameauList() {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
                 
-                const response = await axios.get("http://localhost:3000/api/hameau", {
+                const response = await axios.get(buildApiUrl("hameau"), {
                     signal: controller.signal,
                     timeout: 5000 // Timeout de 5 secondes (redondant avec AbortController mais plus sûr)
                 });
                 
                 clearTimeout(timeoutId);
-                setApiAvailable(true);
                 setData(response.data);
                 
                 // Sauvegarder les données dans le localStorage pour une utilisation hors ligne
@@ -94,8 +93,6 @@ export default function HameauList() {
                     notificationsShown.current = true;
                 }
             } catch (error: any) {
-                setApiAvailable(false);
-                
                 // Gérer les différents types d'erreurs
                 if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
                     console.warn("Timeout lors de la récupération des hameaux:", error);
@@ -176,10 +173,10 @@ export default function HameauList() {
         shadowSize: [41, 41]
     }), []);
     
-    // Fix pour les icônes Leaflet dans React
-    // Supprimé car nous avons déjà configuré les icônes en dehors du useEffect
+    // Groupe de marqueurs pour faciliter la gestion des marqueurs sur la carte
+    const markersLayerRef = useRef<L.LayerGroup | null>(null);
     
-    // Initialisation et gestion de la carte
+    // Initialisation de la carte
     useEffect(() => {
         // Si les données sont chargées et que la carte n'est pas encore initialisée
         if (!loading && data && data.length > 0 && mapContainerRef.current && !mapRef.current) {
@@ -191,13 +188,36 @@ export default function HameauList() {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
             
-            // Sauvegarde de la référence de la carte
+            // Création d'un groupe de marqueurs
+            const markersLayer = L.layerGroup().addTo(map);
+            
+            // Sauvegarde des références
             mapRef.current = map;
+            markersLayerRef.current = markersLayer;
+        }
+        
+        // Nettoyage à la destruction du composant
+        return () => {
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+                markersLayerRef.current = null;
+            }
+        };
+    }, [data, loading, mapCenter]);
+    
+    // Mise à jour des marqueurs sur la carte en fonction des données filtrées
+    useEffect(() => {
+        // Si la carte est initialisée et que nous avons des données filtrées
+        if (mapRef.current && markersLayerRef.current && filteredData) {
+            // Effacer tous les marqueurs existants
+            markersLayerRef.current.clearLayers();
             
             // Tableau pour stocker les coordonnées valides
             const validCoordinates: L.LatLngTuple[] = [];
             
-            data.forEach((hameau) => {
+            // Ajouter les nouveaux marqueurs pour les données filtrées
+            filteredData.forEach((hameau) => {
                 if (hameau.px && hameau.py) {
                     // Conversion des coordonnées en nombres si nécessaire
                     const lat = typeof hameau.py === 'string' ? parseFloat(hameau.py) : hameau.py;
@@ -217,9 +237,8 @@ export default function HameauList() {
                         icon = goodCoverageIcon; // Bonne couverture (vert)
                     }
                     
-                    // Ajouter le marqueur à la carte
-                    L.marker([lat, lng] as L.LatLngTuple, { icon })
-                        .addTo(map)
+                    // Créer un marqueur avec popup interactif
+                    const marker = L.marker([lat, lng] as L.LatLngTuple, { icon })
                         .bindPopup(`
                             <div>
                                 <h3 class="font-bold">${hameau.Nom}</h3>
@@ -227,29 +246,45 @@ export default function HameauList() {
                                 <p>Enfants: ${hameau.nombre_enfant || "N/A"}</p>
                                 <p>Enfants vaccinés: ${hameau.nombre_enfant_vaccines || "N/A"}</p>
                                 <p>Couverture vaccinale: ${vaccinationCoverage}%</p>
+                                <button class="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                    onclick="window.dispatchEvent(new CustomEvent('openHameauDetails', {detail: ${hameau.id}}))">Voir détails</button>
                             </div>
                         `);
+                    
+                    // Ajouter le marqueur au groupe de marqueurs
+                    marker.addTo(markersLayerRef.current!);
                     
                     // Ajouter les coordonnées valides au tableau
                     validCoordinates.push([lat, lng] as L.LatLngTuple);
                 }
             });
             
-            // Ajuster la vue pour inclure tous les marqueurs
+            // Ajuster la vue pour inclure tous les marqueurs si nous avons des coordonnées valides
             if (validCoordinates.length > 0) {
-                map.fitBounds(L.latLngBounds(validCoordinates));
+                mapRef.current.fitBounds(L.latLngBounds(validCoordinates));
             }
         }
-        
-        // Nettoyage à la destruction du composant
-        return () => {
-            if (mapRef.current) {
-                mapRef.current.remove();
-                mapRef.current = null;
+    }, [filteredData, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon]);
+    
+    // Gestionnaire d'événement pour l'ouverture des détails depuis la carte
+    useEffect(() => {
+        const handleOpenHameauDetails = (event: CustomEvent) => {
+            const hameauId = event.detail;
+            const hameau = data.find(h => h.id === hameauId);
+            if (hameau) {
+                handleDetailsClick(hameau);
             }
         };
-    }, [data, loading, goodCoverageIcon, mediumCoverageIcon, lowCoverageIcon, mapCenter]);
-    
+        
+        // Ajouter l'écouteur d'événement
+        window.addEventListener('openHameauDetails', handleOpenHameauDetails as EventListener);
+        
+        // Nettoyer l'écouteur d'événement
+        return () => {
+            window.removeEventListener('openHameauDetails', handleOpenHameauDetails as EventListener);
+        };
+    }, [data, handleDetailsClick]);
+
     return (
         <div className="flex flex-col items-center">
              {/* Barre de recherche */}
@@ -268,14 +303,30 @@ export default function HameauList() {
             {/* Carte des hameaux */}
             {!loading && data && data.length > 0 && (
                 <div className="w-full max-w-[95%] mb-6">
-                    <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3 px-2">
-                            <MapPin className="h-5 w-5 text-green-500" />
-                            <h2 className="text-lg font-medium">Carte des hameaux</h2>
+                    <div className="p-4">
+                        <div className="flex items-center justify-between mb-3 px-2">
+                            <div className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5 text-green-500" />
+                                <h2 className="text-lg font-medium">Carte des hameaux</h2>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                                    <span className="w-3 h-3 rounded-full bg-green-500 mr-1"></span>
+                                    Bonne couverture (&gt;75%)
+                                </Badge>
+                                <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+                                    <span className="w-3 h-3 rounded-full bg-orange-500 mr-1"></span>
+                                    Moyenne (50-75%)
+                                </Badge>
+                                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                                    <span className="w-3 h-3 rounded-full bg-red-500 mr-1"></span>
+                                    Faible (&lt;50%)
+                                </Badge>
+                            </div>
                         </div>
                         <div 
                             ref={mapContainerRef} 
-                            className="h-[400px] w-full rounded-lg overflow-hidden"
+                            className="h-[400px] w-full rounded-lg overflow-hidden border border-gray-200"
                         />
                     </div>
                 </div>
@@ -283,11 +334,7 @@ export default function HameauList() {
             
            
             
-            {!apiAvailable && (
-                <Badge variant="outline" className="mb-4 bg-yellow-50 text-yellow-800 border-yellow-300 flex items-center gap-2">
-                    <WifiOff className="h-3 w-3" /> Mode hors ligne - Certaines fonctionnalités peuvent être limitées
-                </Badge>
-            )}
+           
             {loading ? (
                 <div className="flex flex-col items-center justify-center w-full max-w-lg p-6 text-center border border-gray-200 rounded-lg">
                     <div className="mb-4">

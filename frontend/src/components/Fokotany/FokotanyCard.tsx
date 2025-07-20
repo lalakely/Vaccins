@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils"; // Utilitaire pour combiner les classes Tailwind (optionnel)
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { buildApiUrl } from "../../config/api";
 
 interface FokotanyCardProps {
   fokotany: { ID?: number; id?: number; Nom: string; [key: string]: any }; // Type flexible pour les propriétés du fokotany
@@ -28,7 +29,7 @@ export default function FokotanyCard({ fokotany, onDetailsClick, className }: Fo
       setError(null);
       
       try {
-        const response = await axios.get(`http://localhost:3000/api/fokotany/${fokotanyId}/count-enfants`);
+        const response = await axios.get(buildApiUrl(`/api/fokotany/${fokotanyId}/count-enfants`));
         setChildrenCount(response.data.count);
       } catch (err) {
         console.error('Erreur:', err);

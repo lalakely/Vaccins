@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { buildApiUrl } from '../config/api';
 
 // Types pour les notifications
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
@@ -78,7 +79,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
 
-      const response = await axios.get('http://localhost:3000/api/notifications', {
+      const response = await axios.get(buildApiUrl('/api/notifications'), {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -157,7 +158,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
         
-        axios.post('http://localhost:3000/api/notifications', newNotification, {
+        axios.post(buildApiUrl('/api/notifications'), newNotification, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
           timeout: 5000 // Timeout de 5 secondes
@@ -215,7 +216,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
           
-          await axios.patch(`http://localhost:3000/api/notifications/${notificationId}/read`, {}, {
+          await axios.patch(buildApiUrl(`/api/notifications/${notificationId}/read`), {}, {
             headers: {
               Authorization: `Bearer ${token}`
             },
@@ -266,7 +267,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
           
-          await axios.patch('http://localhost:3000/api/notifications/read-all', {}, {
+          await axios.patch(buildApiUrl('/api/notifications/read-all'), {}, {
             headers: {
               Authorization: `Bearer ${token}`
             },
@@ -320,7 +321,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
           
-          await axios.delete(`http://localhost:3000/api/notifications/${notificationId}`, {
+          await axios.delete(buildApiUrl(`/api/notifications/${notificationId}`), {
             headers: {
               Authorization: `Bearer ${token}`
             },
@@ -368,7 +369,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
         
-        await axios.delete('http://localhost:3000/api/notifications', {
+        await axios.delete(buildApiUrl('/api/notifications'), {
           headers: {
             Authorization: `Bearer ${token}`
           },
@@ -431,7 +432,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
           
-          await axios.post('http://localhost:3000/api/notifications', newNotification, {
+          await axios.post(buildApiUrl('/api/notifications'), newNotification, {
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal,
             timeout: 5000 // Timeout de 5 secondes

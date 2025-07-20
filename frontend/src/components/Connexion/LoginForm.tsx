@@ -7,12 +7,12 @@ import { FaUser, FaKey, FaArrowRight, FaEye, FaEyeSlash } from "react-icons/fa";
 import { AlertCircle } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { buildApiUrl } from "../../config/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
   CardContent,
   CardFooter,
   CardHeader,
@@ -54,7 +54,7 @@ function LoginForm() {
 
  
     try {
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const response = await fetch(buildApiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

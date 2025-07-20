@@ -5,13 +5,13 @@ import { FaUser, FaEnvelope, FaKey, FaArrowRight, FaEye, FaEyeSlash } from 'reac
 import { Link } from 'react-router-dom';
 import { AlertCircle } from "lucide-react";
 import { FaUserTie } from 'react-icons/fa';
+import { buildApiUrl } from "../../config/api";
 
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
   CardContent,
   CardFooter,
   CardHeader,
@@ -43,7 +43,7 @@ function RegisterForm() {
         match: true
     });
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData({
             ...formData,
@@ -62,7 +62,7 @@ function RegisterForm() {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setMessage('');
@@ -75,7 +75,7 @@ function RegisterForm() {
 
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:3000/api/users/register', {
+            const response = await fetch(buildApiUrl('/api/users/register'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -108,7 +108,7 @@ function RegisterForm() {
         }
     };
 
-    const togglePasswordVisibility = (field) => {
+    const togglePasswordVisibility = (field: string) => {
         if (field === "password") setShowPassword(!showPassword);
         if (field === "confirmPassword") setShowConfirmPassword(!showConfirmPassword);
     };

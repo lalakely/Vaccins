@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../../config/api";
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -65,7 +66,7 @@ export default function MapOverview() {
     const fetchData = async () => {
       try {
         // Récupération des fokotany
-        const fokotanyResponse = await fetch("http://localhost:3000/api/fokotany");
+        const fokotanyResponse = await fetch(buildApiUrl("/api/fokotany"));
         if (!fokotanyResponse.ok) {
           throw new Error("Erreur lors de la récupération des fokotany");
         }
@@ -73,7 +74,7 @@ export default function MapOverview() {
         setFokotanyList(fokotanyData);
         
         // Récupération des hameaux avec leurs fokotany associés
-        const hameauResponse = await fetch("http://localhost:3000/api/hameau");
+        const hameauResponse = await fetch(buildApiUrl("/api/hameau"));
         if (!hameauResponse.ok) {
           throw new Error("Erreur lors de la récupération des hameaux");
         }

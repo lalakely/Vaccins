@@ -8,6 +8,8 @@ import { FaHistory } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import NotificationButton from "../notifications/NotificationButton";
+import ApiConnectionStatus from "../ui/ApiConnectionStatus";
+import { buildApiUrl } from "../../config/api";
 
 function NavBar() {
   const { logout } = useAuth(); // Suppression de 'user' car non utilisé
@@ -39,7 +41,7 @@ function NavBar() {
 
       console.log("Token envoyé :", token);
 
-      const response = await fetch("http://localhost:3000/api/auth/logout", {
+      const response = await fetch(buildApiUrl("/api/auth/logout"), {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -64,6 +66,7 @@ function NavBar() {
     <>
       {/* Menu utilisateur en haut à droite avec animation */}
       <div className="fixed top-4 right-6 z-[var(--z-index-navbar)] flex items-center gap-3">
+        <ApiConnectionStatus />
         <NotificationButton />
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2, PackageCheck, PackageX, AlertTriangle, Database, Search } from "lucide-react"; // Icônes pour affichage
 import { Input } from "@/components/ui/input";
 import { Vaccine, VaccineStats } from "@/types/vaccine";
+import { buildApiUrl } from "../../config/api";
 
 export default function VaccineList() {
     const [data, setData] = useState<Vaccine[]>([]);
@@ -22,7 +23,7 @@ export default function VaccineList() {
     });
 
     useEffect(() => {
-        axios.get("http://localhost:3000/api/vaccins")
+        axios.get(buildApiUrl("/api/vaccins"))
             .then((response) => {
                 const vaccines = response.data;
                 setData(vaccines);

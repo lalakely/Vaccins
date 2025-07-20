@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../../config/api";
 "use client";
 
 import * as React from "react";
@@ -41,7 +42,7 @@ function VaccineCoverage() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
           
-          const vaccinsRes = await fetch("http://localhost:3000/api/vaccins", {
+          const vaccinsRes = await fetch(buildApiUrl("/api/vaccins"), {
             signal: controller.signal
           });
           clearTimeout(timeoutId);
@@ -62,7 +63,7 @@ function VaccineCoverage() {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
           
-          const vaccinationsRes = await fetch("http://localhost:3000/api/vaccinations", {
+          const vaccinationsRes = await fetch(buildApiUrl("/api/vaccinations"), {
             signal: controller.signal
           });
           clearTimeout(timeoutId);

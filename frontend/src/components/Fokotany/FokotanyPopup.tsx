@@ -7,6 +7,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { RadialBarChart, RadialBar, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import axios from "axios";
+import { buildApiUrl } from "../../config/api";
 import { useState, useEffect, useRef } from "react";
 import useNotificationService from "../../hooks/useNotificationService";
 import {
@@ -39,7 +40,6 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [vaccinationStats, setVaccinationStats] = useState<{total: number, vaccinated: number, percentage: number}>({total: 0, vaccinated: 0, percentage: 0});
   const [chartLoading, setChartLoading] = useState<boolean>(true);
-  const [apiAvailable, setApiAvailable] = useState(true); // Indiquer si l'API est disponible
   const { showSuccess, showError, showWarning } = useNotificationService();
   const warningShown = useRef<boolean>(false); // Pour suivre si l'avertissement a déjà été affiché
   const errorShown = useRef<boolean>(false); // Pour éviter d'afficher plusieurs fois la même erreur
@@ -58,13 +58,12 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
     
     try {
       setChartLoading(true);
-      setApiAvailable(true); // Réinitialiser l'état de l'API au début de la requête
       
       // Utiliser un AbortController pour gérer le timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      const response = await axios.get(`http://localhost:3000/api/fokotany/${fokotany.ID}/stats`, {
+      const response = await axios.get(buildApiUrl(`/api/fokotany/${fokotany.ID}/stats`), {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes (redondant avec AbortController mais plus sûr)
       });
@@ -102,7 +101,6 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
         }
       }
     } catch (error: any) {
-      setApiAvailable(false);
       
       // Gérer les différents types d'erreurs
       if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
@@ -168,7 +166,7 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      await axios.delete(`http://localhost:3000/api/fokotany/${fokotany.ID}`, {
+      await axios.delete(buildApiUrl(`fokotany/${fokotany.ID}`), {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes
       });

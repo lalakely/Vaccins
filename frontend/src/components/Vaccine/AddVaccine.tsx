@@ -3,6 +3,7 @@ import { CiCirclePlus } from "react-icons/ci";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buildApiUrl } from "../../config/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -147,7 +148,7 @@ export default function AddVaccine() {
         // Fetch available vaccines when component mounts
         const fetchVaccines = async () => {
             try {
-                const response = await fetch('http://localhost:3000/api/vaccins');
+                const response = await fetch(buildApiUrl('/api/vaccins'));
                 if (response.ok) {
                     const vaccines = await response.json() as Vaccine[];
                     setAvailableVaccines(vaccines);
@@ -220,7 +221,7 @@ export default function AddVaccine() {
                 Rappels: rappels
             };
 
-            const response = await fetch('http://localhost:3000/api/vaccins', {
+            const response = await fetch(buildApiUrl('/api/vaccins'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

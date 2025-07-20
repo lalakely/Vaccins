@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../../config/api";
 "use client";
 
 import * as React from "react";
@@ -21,8 +22,8 @@ function Dashboard() {
   React.useEffect(() => {
     const fetchKpis = async () => {
       try {
-        const enfantsRes = await fetch("http://localhost:3000/api/enfants");
-        const vaccinationsRes = await fetch("http://localhost:3000/api/vaccinations");
+        const enfantsRes = await fetch(buildApiUrl("/api/enfants"));
+        const vaccinationsRes = await fetch(buildApiUrl("/api/vaccinations"));
 
         if (!enfantsRes.ok || !vaccinationsRes.ok) {
           throw new Error("Erreur lors de la récupération des KPIs");
@@ -69,21 +70,21 @@ function Dashboard() {
             value={kpis.totalEnfants.toLocaleString()}
             loading={loading}
             icon={<Users className="h-5 w-5" />}
-            className="bg-gradient-to-br from-blue-50 to-white"
+            className="flex items-center bg-blue-50 border border-blue-100 rounded-lg p-4"
           />
           <KPICard
             title="Vaccinés"
             value={kpis.vaccins.toLocaleString()}
             loading={loading}
             icon={<Syringe className="h-5 w-5" />}
-            className="bg-gradient-to-br from-green-50 to-white"
+            className="flex items-center bg-green-50 border border-green-100 rounded-lg p-4"
           />
           <KPICard
             title="Non Vaccinés"
             value={kpis.nonVaccines.toLocaleString()}
             loading={loading}
             icon={<UserX className="h-5 w-5" />}
-            className="bg-gradient-to-br from-red-50 to-white"
+            className="flex items-center bg-red-50 border border-red-100 rounded-lg p-4"
           />
         </div>
 

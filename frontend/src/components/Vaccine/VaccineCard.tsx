@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils"; // Utilitaire pour combiner les classes Tailwind (optionnel)
 import { useEffect, useState, useMemo } from "react";
 import { Vaccine } from "@/types/vaccine";
+import { buildApiUrl } from "../../config/api";
 
 interface VaccinationStat {
   count: number;
@@ -39,7 +40,7 @@ function VaccineCard({ vaccine, onDetailsClick, className }: VaccineCardProps) {
       setError(null);
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/count-enfants`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/count-enfants`));
         
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération du nombre d\'enfants vaccinés');

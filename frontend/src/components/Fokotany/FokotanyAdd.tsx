@@ -3,6 +3,7 @@ import { CiCirclePlus } from "react-icons/ci";
 import { FaHome, FaMapMarkerAlt } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { buildApiUrl } from "../../config/api";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { formStyles } from "@/components/ui/form-styles";
@@ -161,7 +162,7 @@ export default function FokotanyAdd() {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:3000/api/fokotany', {
+            const response = await fetch(buildApiUrl('/api/fokotany'), { // Correction de l'appel à buildApiUrl
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),

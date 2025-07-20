@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import { buildApiUrl } from "../../config/api";
 
 interface Vaccine {
   id: number;
@@ -95,7 +96,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
   useEffect(() => {
     const fetchVaccines = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/vaccins');
+        const response = await fetch(buildApiUrl('/api/vaccins')); // Supprimer le point-virgule
         if (response.ok) {
           const vaccines = await response.json() as Vaccine[];
           setAvailableVaccines(vaccines.filter(v => v.id !== vaccine.id)); // Exclure le vaccin en cours
@@ -118,7 +119,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
       if (!vaccine.id || !open) return;
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/prerequis`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/prerequis`)); // Supprimer le point-virgule
         if (response.ok) {
           const prerequisites = await response.json();
           // Transformer les données pour correspondre à notre format de state
@@ -146,7 +147,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
       if (!vaccine.id || !open) return;
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/suites`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/suites`)); // Supprimer le point-virgule
         if (response.ok) {
           const suites = await response.json();
           // Transformer les données pour correspondre à notre format de state
@@ -176,7 +177,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
       if (!vaccine.id || !open) return;
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/rappels`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/rappels`)); // Supprimer le point-virgule
         if (response.ok) {
           const rappelsData = await response.json();
           // Transformer les données pour correspondre à notre format de state
@@ -340,7 +341,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
     };
     
     try {
-      const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}`, {
+      const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend),
@@ -351,8 +352,6 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
         setOpen(false);
         if (onEditSuccess) {
           onEditSuccess();
-        } else {
-          window.location.reload();
         }
       } else {
         const error = await response.json();
@@ -361,7 +360,7 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
       }
     } catch (error) {
       console.error('Erreur réseau:', error);
-      alert('Erreur réseau lors de la modification');
+      alert('Erreur réseau lors de la modification du vaccin');
     } finally {
       setIsLoading(false);
     }
@@ -370,7 +369,10 @@ export default function EditVaccine({ vaccine, onEditSuccess }: EditVaccineProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 bg-blue-500 text-white font-semibold px-4 py-5 hover:bg-blue-600 transition disabled:opacity-50 rounded-full">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 bg-blue-500 text-white font-semibold px-4 py-2 hover:bg-blue-600 transition disabled:opacity-50 rounded-full"
+        >
           <PencilIcon className="h-5 w-5" />
           Modifier le vaccin
         </Button>

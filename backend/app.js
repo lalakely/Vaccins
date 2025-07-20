@@ -11,17 +11,41 @@ const childHistoryRoutes = require('./routes/childHistoryRoutes'); // Import des
 const deletedChildrenLogRoutes = require('./routes/deletedChildrenLogRoutes'); // Import des routes pour les logs de suppression
 const notificationsRoutes = require('./routes/notificationsRoutes'); // Import des routes de notifications
 
+// Obtenir l'adresse IP de la machine
+const os = require('os');
+const networkInterfaces = os.networkInterfaces();
+let ipAddress = '0.0.0.0';
+
+// Trouver une adresse IPv4 non-interne
+Object.keys(networkInterfaces).forEach(interfaceName => {
+    networkInterfaces[interfaceName].forEach(iface => {
+        if (!iface.internal && iface.family === 'IPv4') {
+            ipAddress = iface.address;
+        }
+    });
+});
+
 const PORT = 3000;
 
-// Configuration CORS pour permettre les requêtes depuis le frontend
+// Configuration CORS pour permettre les requêtes depuis n'importe quelle origine
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: '*', // Permet à toutes les origines d'accéder à l'API
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
 // Middleware pour parser le JSON (doit être avant les routes)
 app.use(express.json());
+
+// Endpoint pour récupérer l'IP du serveur
+app.get('/api/server-info', (req, res) => {
+    res.json({
+        ip: ipAddress,
+        port: PORT
+    });
+});
+
 app.use('/api', enfantRoutes);
 app.use('/api', vaccinRoutes);
 app.use('/api', fokotanyRoutes);
@@ -36,8 +60,9 @@ app.get('/' , (req, res) => {
     res.send('Hello, World!');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on http://${ipAddress}:${PORT}`);
+    console.log(`API accessible at http://${ipAddress}:${PORT}/api`);
 });
 
 module.exports = app;

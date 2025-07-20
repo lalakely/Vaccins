@@ -7,6 +7,7 @@ import {
 } from "@heroicons/react/24/solid";
 import VaccineCoverageChart from "../charts/VaccineCoverageChart";
 import axios from "axios";
+import { buildApiUrl } from "../../config/api";
 import { useState, useEffect, useRef } from "react";
 import useNotificationService from "../../hooks/useNotificationService";
 import {
@@ -20,9 +21,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { WifiOff } from "lucide-react";
+
 
 interface HameauPopupProps {
   hameau: {
@@ -44,7 +43,6 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [vaccinationStats, setVaccinationStats] = useState<{total: number, vaccinated: number, percentage: number}>({total: 0, vaccinated: 0, percentage: 0});
   const [chartLoading, setChartLoading] = useState(true);
-  const [apiAvailable, setApiAvailable] = useState(true); // Indiquer si l'API est disponible
   const { showSuccess, showError, showWarning } = useNotificationService();
   const warningShown = useRef<boolean>(false); // Pour suivre si l'avertissement a déjà été affiché
   const errorShown = useRef<boolean>(false); // Pour éviter d'afficher plusieurs fois la même erreur
@@ -62,13 +60,12 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
     
     try {
       setChartLoading(true);
-      setApiAvailable(true); // Réinitialiser l'état de l'API au début de la requête
       
       // Utiliser un AbortController pour gérer le timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      const response = await axios.get(`http://localhost:3000/api/hameau/${hameau.ID || hameau.id}/stats`, {
+      const response = await axios.get(buildApiUrl(`/api/hameau/${hameau.ID || hameau.id}/stats`), {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes (redondant avec AbortController mais plus sûr)
       });
@@ -118,7 +115,6 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
         }
       }
     } catch (error: any) {
-      setApiAvailable(false);
       
       // Gérer les différents types d'erreurs
       if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
@@ -215,7 +211,7 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
       
-      await axios.delete(`http://localhost:3000/api/hameau/${hameau.id}`, {
+      await axios.delete(buildApiUrl(`hameau/${hameau.id}`), {
         signal: controller.signal,
         timeout: 5000 // Timeout de 5 secondes
       });

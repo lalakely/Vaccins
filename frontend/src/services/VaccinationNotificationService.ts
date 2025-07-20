@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { NotificationCategory } from '../contexts/NotificationContext';
+import { buildApiUrl } from '../config/api';
 
 // Interface pour les données de vaccins en retard
 export interface OverdueVaccine {
@@ -32,7 +33,7 @@ export interface ChildWithOverdueVaccines {
  * Service pour gérer les notifications liées aux vaccinations
  */
 class VaccinationNotificationService {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = buildApiUrl('/api');
   private token: string | null = localStorage.getItem('token');
 
   /**

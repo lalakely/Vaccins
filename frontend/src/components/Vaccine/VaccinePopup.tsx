@@ -12,6 +12,7 @@ import { PackageX, AlertTriangle } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import EditVaccine from "./EditVaccine";
 import { Vaccine, VaccineWithRelations } from "@/types/vaccine";
+import { buildApiUrl } from "../../config/api";
 
 interface Rappel {
   delai: number;
@@ -57,7 +58,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
       setErrorPrereq(null);
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/prerequis`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/prerequis`));
         
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des vaccins prérequis');
@@ -85,7 +86,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
       setErrorSuite(null);
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/suites`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/suites`));
         
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des vaccins suites');
@@ -123,7 +124,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
       setErrorRappels(null);
       
       try {
-        const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}/rappels`);
+        const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}/rappels`));
         
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des rappels');
@@ -157,7 +158,7 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
    
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/vaccins/${vaccine.id}`, {
+      const response = await fetch(buildApiUrl(`/api/vaccins/${vaccine.id}`), { // Correction de l'appel à buildApiUrl
         method: 'DELETE',
         headers: { "Content-Type": "application/json" },
       });

@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../../config/api";
 import { useEffect, useState } from "react";
 
 function VaccineStockTable() {
@@ -6,7 +7,7 @@ function VaccineStockTable() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch("http://localhost:3000/api/vaccins");
+      const res = await fetch(buildApiUrl("/api/vaccins"));
       const data = await res.json();
       setVaccins(data);
       setLoading(false);

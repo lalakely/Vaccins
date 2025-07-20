@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState, useRef } from "react";
+import { buildApiUrl } from "../../config/api";
 import ChildRow from "./ChildRow";
 import ChildDetailsPopup from "./ChildDetailsPopup";
 import {
@@ -105,7 +106,7 @@ export default function ChildList() {
     // Si aucun vaccin n'est sélectionné, on récupère tous les enfants
     if (!filters.vaccin_id) {
       axios
-        .get("http://localhost:3000/api/enfants")
+        .get(buildApiUrl("/api/enfants"))
         .then((response) => {
           setData(response.data);
         })
@@ -120,15 +121,15 @@ export default function ChildList() {
       
       // 1. Si on veut les enfants non vaccinés
       if (filters.show_not_vaccinated) {
-        url = `http://localhost:3000/api/enfants/not-vaccinated/${filters.vaccin_id}`;
+        url = buildApiUrl(`/api/enfants/not-vaccinated/${filters.vaccin_id}`);
       }
       // 2. Si on veut filtrer par nombre de rappels
       else if (filters.rappel_count !== null) {
-        url = `http://localhost:3000/api/enfants/vaccine/${filters.vaccin_id}/rappel/${filters.rappel_count}`;
+        url = buildApiUrl(`/api/enfants/vaccine/${filters.vaccin_id}/rappel/${filters.rappel_count}`);
       }
       // 3. Sinon, on affiche tous les enfants vaccinés avec ce vaccin
       else {
-        url = `http://localhost:3000/api/enfants/vaccine/${filters.vaccin_id}`;
+        url = buildApiUrl(`/api/enfants/vaccine/${filters.vaccin_id}`);
       }
         
       axios
@@ -353,11 +354,11 @@ export default function ChildList() {
     setPrintLoading(true);
     try {
       // Récupérer les données de l'enfant
-      const childResponse = await axios.get(`http://localhost:3000/api/enfants/${childId}`);
+      const childResponse = await axios.get(buildApiUrl(`/api/enfants/${childId}`));
       setSelectedChildData(childResponse.data);
       
       // Récupérer les vaccinations de l'enfant
-      const vaccinationsResponse = await axios.get(`http://localhost:3000/api/vaccinations/child?enfant_id=${childId}`);
+      const vaccinationsResponse = await axios.get(buildApiUrl(`/api/vaccinations/child?enfant_id=${childId}`));
       setChildVaccines(vaccinationsResponse.data);
       
       // Pour chaque vaccin, récupérer ses rappels
@@ -366,7 +367,7 @@ export default function ChildList() {
       
       for (const vaccine of vaccinationsResponse.data) {
         try {
-          const rappelsResponse = await axios.get(`http://localhost:3000/api/vaccins/${vaccine.vaccin_id}/rappels`);
+          const rappelsResponse = await axios.get(buildApiUrl(`/api/vaccins/${vaccine.vaccin_id}/rappels`));
           rappelsMap[vaccine.id] = rappelsResponse.data;
           
           // Initialiser les rappels administrés
@@ -376,7 +377,7 @@ export default function ChildList() {
           for (let i = 0; i < rappelsResponse.data.length; i++) {
             try {
               const checkResponse = await axios.get(
-                `http://localhost:3000/api/vaccinations/check-rappel?enfant_id=${childId}&vaccin_id=${vaccine.vaccin_id}&rappel_id=${i}`
+                buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${childId}&vaccin_id=${vaccine.vaccin_id}&rappel_id=${i}`)
               );
               if (checkResponse.data) {
                 administeredMap[vaccine.id][i] = checkResponse.data.administered;

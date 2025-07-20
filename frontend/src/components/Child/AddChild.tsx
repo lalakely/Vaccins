@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import axios from "axios";
+import { buildApiUrl } from "../../config/api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -36,12 +37,14 @@ export default function AddChild() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        axios.get("http://localhost:3000/api/fokotany").then((response) => {
-            setFokotanyList(response.data);
-        });
-        axios.get("http://localhost:3000/api/hameau").then((response) => {
-            setHameauList(response.data);
-        });
+        axios.get(buildApiUrl("/api/fokotany"))
+            .then((response) => {
+                setFokotanyList(response.data);
+            });
+        axios.get(buildApiUrl("/api/hameau"))
+            .then((response) => {
+                setHameauList(response.data);
+            });
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +59,7 @@ export default function AddChild() {
         setLoading(true);
 
         try {
-            const response = await axios.post("http://localhost:3000/api/enfants", formData);
+            const response = await axios.post(buildApiUrl("/api/enfants"), formData);
             if (response.status === 201) {
                 setSuccessMessage("Enfant ajouté avec succès.");
                 setFormData({

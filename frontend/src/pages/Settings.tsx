@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaCog, FaUser, FaBell, FaShieldAlt, FaSave } from "react-icons/fa";
 import NavBar from "../components/main/NavBar";
+import { buildApiUrl } from "../config/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +40,7 @@ export default function SettingsPage() {
           }));
           
           // Récupérer les préférences de notification de l'utilisateur
-          const response = await fetch(`http://localhost:3000/api/users/preferences`, {
+          const response = await fetch(buildApiUrl(`/api/users/preferences`), {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -128,7 +129,7 @@ export default function SettingsPage() {
       }
       
       // Appel API pour mettre à jour les informations utilisateur
-      const response = await fetch('http://localhost:3000/api/users/update', {
+      const response = await fetch(buildApiUrl('/api/users/update'), { // Correction de l'appel à buildApiUrl
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -191,7 +192,7 @@ export default function SettingsPage() {
       }
       
       // Appel API pour mettre à jour les préférences de notification
-      const response = await fetch('http://localhost:3000/api/users/preferences', {
+      const response = await fetch(buildApiUrl('/api/users/preferences'), { // Correction de l'appel à buildApiUrl
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../../config/api";
 "use client";
 
 import * as React from "react";
@@ -37,7 +38,7 @@ function GenderAgeChart() {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/enfants");
+        const res = await fetch(buildApiUrl("/api/enfants"));
 
         if (!res.ok) throw new Error(`Erreur enfants: ${res.status}`);
 

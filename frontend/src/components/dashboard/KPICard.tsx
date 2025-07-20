@@ -19,7 +19,7 @@ function KPICard({ title, value, loading, icon, className }: KPICardProps) {
     >
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full  text-gray-600">
             {icon}
           </div>
         )}
@@ -36,7 +36,6 @@ function KPICard({ title, value, loading, icon, className }: KPICardProps) {
           )}
         </div>
       </div>
-      <div className="mt-3 h-1 w-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" />
     </div>
   );
 }

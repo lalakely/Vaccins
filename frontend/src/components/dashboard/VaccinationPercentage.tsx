@@ -1,3 +1,4 @@
+import { buildApiUrl } from "../../config/api";
 "use client";
 
 import * as React from "react";
@@ -37,8 +38,8 @@ export function VaccinationPercentage() {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const enfantsRes = await fetch("http://localhost:3000/api/enfants");
-        const vaccinationsRes = await fetch("http://localhost:3000/api/vaccinations");
+        const enfantsRes = await fetch(buildApiUrl("/api/enfants"));
+        const vaccinationsRes = await fetch(buildApiUrl("/api/vaccinations"));
 
         if (!enfantsRes.ok || !vaccinationsRes.ok) {
           throw new Error("Erreur lors de la récupération des données");
