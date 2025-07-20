@@ -29,10 +29,21 @@ Object.keys(networkInterfaces).forEach(interfaceName => {
 
 //Middleware
 app.use(cors({
-    origin: '*', // Permet à toutes les origines d'accéder à l'API
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: ['http://localhost:5173', 'http://192.168.178.176:5173'], // Origines spécifiques autorisées
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
+
+// Middleware pour les préflight requests OPTIONS
+app.options('*', cors());
+
+// Middleware pour déboguer les requêtes entrantes
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    console.log('Headers:', req.headers);
+    next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

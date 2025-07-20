@@ -54,6 +54,7 @@ import {
   BellAlertIcon,
   ExclamationCircleIcon,
   ArrowPathIcon as RefreshIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/solid";
 // Les composants Select ne sont pas utilisés dans ce fichier
 
@@ -62,6 +63,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [upcomingVaccineRappels, setUpcomingVaccineRappels] = useState<{[key: string]: Rappel[]}>({});  // Utilisé pour stocker les rappels des vaccins à venir
   const [selectedVaccine, setSelectedVaccine] = useState<string>("");
+  const [vaccineStockInfo, setVaccineStockInfo] = useState<{[key: string]: {stock: number, expired: boolean}}>({});
   const [availableVaccines, setAvailableVaccines] = useState<any[]>([]);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [overdueVaccines, setOverdueVaccines] = useState<OverdueVaccine[]>([]);
@@ -159,17 +161,32 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   }, [upcomingVaccines, vaccines, vaccineRappels, administeredRappels]);
 
   useEffect(() => {
-    const fetchVaccines = async () => {
-      setIsLoading(true);
+    // Fonction pour récupérer les vaccins disponibles
+    const fetchAvailableVaccines = async () => {
       try {
-        const response = await fetch(buildApiUrl("/api/vaccins"), {
-          cache: "no-store",
-        });
+        const response = await fetch(buildApiUrl("/api/vaccins"));
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
         const data = await response.json();
         setAvailableVaccines(data);
+        
+        // Récupérer les informations de stock et de péremption pour chaque vaccin
+        const stockInfo: {[key: string]: {stock: number, expired: boolean}} = {};
+        const today = new Date();
+        
+        data.forEach((vaccine: any) => {
+          const peremptionDate = vaccine.Date_peremption ? new Date(vaccine.Date_peremption) : null;
+          stockInfo[vaccine.id] = {
+            stock: vaccine.Stock || 0,
+            expired: peremptionDate ? peremptionDate < today : false
+          };
+        });
+        
+        setVaccineStockInfo(stockInfo);
       } catch (error) {
-        setError("Erreur lors du chargement des vaccins");
-        console.error("Error fetching vaccines:", error);
+        console.error("Error fetching available vaccines:", error);
+        setError("Erreur lors de la récupération des vaccins disponibles");
       } finally {
         setIsLoading(false);
       }
@@ -329,7 +346,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
     };
 
     // Toujours charger la liste des vaccins disponibles, indépendamment de l'enfant sélectionné
-    fetchVaccines();
+    fetchAvailableVaccines();
 
     if (enfantId) {
       fetchChildVaccinations();
@@ -705,6 +722,21 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const handleAddVaccine = async () => {
     if (!selectedVaccine || !enfantId) {
       console.error("Vaccine or enfantId missing");
+      return;
+    }
+    
+    // Vérifier si le vaccin est périmé ou en rupture de stock
+    const stockInfo = vaccineStockInfo[selectedVaccine] || { stock: 0, expired: false };
+    
+    if (stockInfo.expired) {
+      setError("Ce vaccin est périmé et ne peut pas être administré.");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+    
+    if (stockInfo.stock <= 0) {
+      setError("Le stock de ce vaccin est épuisé. Impossible de l'administrer.");
+      setTimeout(() => setError(null), 5000);
       return;
     }
     
@@ -1330,16 +1362,49 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-gray-400 focus:border-gray-600 bg-white text-gray-900"
             >
               <option value="" disabled>Sélectionnez un vaccin</option>
-              {availableVaccines && availableVaccines.map((vaccine: any) => (
-                <option
-                  key={`select-${vaccine.id}`}
-                  value={vaccine.id}
-                >
-                  {vaccine.Nom}
-                </option>
-              ))}
+              {availableVaccines && availableVaccines.map((vaccine: any) => {
+                const stockInfo = vaccineStockInfo[vaccine.id] || { stock: 0, expired: false };
+                const isOutOfStock = stockInfo.stock <= 0;
+                const isExpired = stockInfo.expired;
+                
+                return (
+                  <option
+                    key={`select-${vaccine.id}`}
+                    value={vaccine.id}
+                    disabled={isOutOfStock || isExpired}
+                  >
+                    {vaccine.Nom} 
+                    {isOutOfStock ? ' - Stock épuisé' : ''}
+                    {isExpired ? ' - Périmé' : ''}
+                    {!isOutOfStock && !isExpired ? ` - Stock: ${stockInfo.stock}` : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
+          
+          {/* Affichage des avertissements de stock épuisé ou péremption */}
+          {selectedVaccine && vaccineStockInfo[selectedVaccine] && (
+            <>
+              {vaccineStockInfo[selectedVaccine].expired && (
+                <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200">
+                  <p className="font-medium mb-2 text-red-700 flex items-center">
+                    <XCircleIcon className="h-5 w-5 mr-2" />
+                    Ce vaccin est périmé et ne peut pas être administré.
+                  </p>
+                </div>
+              )}
+              
+              {!vaccineStockInfo[selectedVaccine].expired && vaccineStockInfo[selectedVaccine].stock <= 0 && (
+                <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200">
+                  <p className="font-medium mb-2 text-red-700 flex items-center">
+                    <InboxIcon className="h-5 w-5 mr-2" />
+                    Le stock de ce vaccin est épuisé. Impossible de l'administrer.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
           
           {/* Affichage des avertissements de prérequis */}
           {prerequisiteWarning && selectedVaccine && (
@@ -1370,22 +1435,30 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 disabled={
                   Boolean(prerequisiteWarning && !prerequisiteWarning.canBeAdministered) ||
                   Boolean(selectedVaccine && fullyAdministeredVaccines[selectedVaccine]) ||
-                  Boolean(selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached)
+                  Boolean(selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached) ||
+                  Boolean(selectedVaccine && vaccineStockInfo[selectedVaccine]?.expired) ||
+                  Boolean(selectedVaccine && vaccineStockInfo[selectedVaccine]?.stock <= 0)
                 }
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-md ${
                   (prerequisiteWarning && !prerequisiteWarning.canBeAdministered) || 
                   (selectedVaccine && fullyAdministeredVaccines[selectedVaccine]) ||
-                  (selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached)
+                  (selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached) ||
+                  (selectedVaccine && vaccineStockInfo[selectedVaccine]?.expired) ||
+                  (selectedVaccine && vaccineStockInfo[selectedVaccine]?.stock <= 0)
                     ? 'bg-gray-400 cursor-not-allowed' 
                     : 'bg-green-500 hover:bg-green-600 text-white'
                 }`}
               >
                 <PlusIcon className="h-5 w-5" /> 
-                {selectedVaccine && fullyAdministeredVaccines[selectedVaccine] 
-                  ? "Toutes les doses administrées" 
-                  : selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached
-                    ? `Maximum atteint (${maxRappelsInfo[selectedVaccine]?.currentCount}/${maxRappelsInfo[selectedVaccine]?.maxAllowed})` 
-                    : "Confirmer l'ajout"}
+                {selectedVaccine && vaccineStockInfo[selectedVaccine]?.expired
+                  ? "Vaccin périmé"
+                  : selectedVaccine && vaccineStockInfo[selectedVaccine]?.stock <= 0
+                    ? "Stock épuisé"
+                    : selectedVaccine && fullyAdministeredVaccines[selectedVaccine] 
+                      ? "Toutes les doses administrées" 
+                      : selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached
+                        ? `Maximum atteint (${maxRappelsInfo[selectedVaccine]?.currentCount}/${maxRappelsInfo[selectedVaccine]?.maxAllowed})` 
+                        : "Confirmer l'ajout"}
               </button>
               <button
                 onClick={() => setShowCombobox(false)}

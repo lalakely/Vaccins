@@ -75,7 +75,16 @@ function RegisterForm() {
 
         try {
             setLoading(true);
-            const response = await fetch(buildApiUrl('/api/users/register'), {
+            const apiUrl = buildApiUrl('api/users/register');
+            console.log('URL d\'inscription utilisée:', apiUrl);
+            console.log('Données envoyées:', {
+                username: formData.username,
+                email: formData.email,
+                accountType: formData.accountType,
+                password: '***' // Masqué pour la sécurité
+            });
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -85,8 +94,20 @@ function RegisterForm() {
                     password: formData.password
                 })
             });
-
-            const data = await response.json();
+            
+            console.log('Statut de la réponse:', response.status);
+            console.log('Headers de la réponse:', Object.fromEntries(response.headers.entries()));
+            
+            let data;
+            try {
+                data = await response.json();
+                console.log('Données de la réponse:', data);
+            } catch (jsonError) {
+                console.error('Erreur lors du parsing JSON:', jsonError);
+                const textResponse = await response.text();
+                console.log('Réponse texte brute:', textResponse);
+                throw new Error(`Erreur de parsing JSON: ${jsonError.message}. Réponse brute: ${textResponse}`);
+            }
 
             if (response.ok) {
                 setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter.');

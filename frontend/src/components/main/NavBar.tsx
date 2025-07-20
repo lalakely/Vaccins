@@ -147,7 +147,7 @@ function NavBar() {
           <NavItem to="/Vaccins" icon={<FaSyringe size={18} />} label="Vaccins" active={location.pathname === "/Vaccins"} />
           <NavItem to="/Fokotany" icon={<LuMapPin size={18} />} label="Fokotany" active={location.pathname === "/Fokotany"} />
           <NavItem to="/Hameau" icon={<FaRegMap size={18} />} label="Hameau" active={location.pathname === "/Hameau"} />
-          <NavItem to="/settings" icon={<FaCog size={18} />} label="Paramètres" active={location.pathname === "/settings"} />
+         
         </nav>
       </div>
 
@@ -159,7 +159,6 @@ function NavBar() {
         <MobileNavItem to="/Vaccins" icon={<FaSyringe size={20} />} label="Vaccins" active={location.pathname === "/Vaccins"} />
         <MobileNavItem to="/Fokotany" icon={<LuMapPin size={20} />} label="Fokotany" active={location.pathname === "/Fokotany"} />
         <MobileNavItem to="/Hameau" icon={<FaRegMap size={20} />} label="Hameau" active={location.pathname === "/Hameau"} />
-        <MobileNavItem to="/settings" icon={<FaCog size={20} />} label="Paramètres" active={location.pathname === "/settings"} />
       </div>
     </>
   );

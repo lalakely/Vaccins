@@ -1,4 +1,7 @@
 {
+  "name": "csb-vaccins",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
     "cors": "^2.8.5",
     "html2pdf.js": "^0.10.3",
@@ -9,9 +12,16 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.6.2",
     "@types/leaflet": "^1.9.20",
+    "concurrently": "^8.2.2",
     "shadcn-ui": "^0.9.4"
   },
   "scripts": {
-    "dev": "vite"
+    "setup": "./setup-tauri.sh",
+    "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "start:backend": "cd backend && npm run start",
+    "start:frontend": "cd frontend && npm run dev"
   }
 }
