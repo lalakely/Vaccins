@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/table";
 import { 
   CheckCircle,
-  Clock
+  Clock,
+  AlertTriangle
 } from "lucide-react";
 
 // Interfaces
@@ -193,23 +194,49 @@ const ChildPrintView: React.FC<ChildPrintViewProps> = ({
                               console.log(`Rappel ${index+1} marqué administré via texte description`);
                             }
                             
+                            // Calculer si le rappel est dû ou est aujourd'hui
+                            const rappelDate = new Date(vaccine.date_vaccination);
+                            rappelDate.setDate(rappelDate.getDate() + rappel.delai);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            
+                            const isRappelDue = rappelDate < today && !isAdministered;
+                            const isToday = (
+                              rappelDate.getDate() === today.getDate() &&
+                              rappelDate.getMonth() === today.getMonth() &&
+                              rappelDate.getFullYear() === today.getFullYear() &&
+                              !isAdministered
+                            );
+                            
+                            // Couleurs dynamiques selon l'état
+                            let textColor = isAdministered ? 'text-green-800' : isRappelDue ? 'text-yellow-800' : isToday ? 'text-yellow-800' : 'text-blue-800';
+                            let iconColor = isAdministered ? 'text-green-500' : isRappelDue ? 'text-amber-500' : isToday ? 'text-amber-500' : 'text-blue-500';
+                            
                             // Journalisation détaillée pour débogage
                             console.log(`Rappel ${index+1} du vaccin ${vaccine.name || vaccine.Nom} - administré: ${isAdministered}`, {
                               rappelIndex: index,
                               rappelDelai: rappel.delai,
                               vaccineId: vaccine.vaccin_id || vaccine.id,
+                              isRappelDue,
+                              isToday
                             });
                             
                             return (
                               <div key={`rappel-${index}`} className="flex items-center gap-1">
-                                {isAdministered ? (
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                {index < vaccinesOfType.length-1 ? (
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Administré</span>
+                                  </div>
+                                ) : isRappelDue ? (
+                                  <AlertTriangle className={`h-4 w-4 ${iconColor}`} />
+                                ) : isToday ? (
+                                  <AlertTriangle className={`h-4 w-4 ${iconColor}`} />
                                 ) : (
-                                  <Clock className="h-4 w-4 text-amber-500" />
+                                  <Clock className={`h-4 w-4 ${iconColor}`} />
                                 )}
-                                <span>
-                                  {rappel.description || `Rappel à ${rappel.delai} jours`}
-                                  {isAdministered ? " (Fait)" : " (À faire)"}
+                                <span className={`text-xs ${textColor}`}>
+                                  {rappel.description || (isAdministered ? 'Administré' : (rappel.delai === 0 ? 'Immédiat' : `J+${rappel.delai}`))}
                                 </span>
                               </div>
                             );

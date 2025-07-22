@@ -10,6 +10,8 @@ import axios from "axios";
 import { buildApiUrl } from "../../config/api";
 import { useState, useEffect, useRef } from "react";
 import useNotificationService from "../../hooks/useNotificationService";
+import EditFokotany from "./EditFokotany";
+import LocationMap from "../shared/LocationMap";
 import {
   ChartConfig,
   ChartContainer
@@ -213,9 +215,37 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
                 <span><span className="font-semibold">Nom :</span> {fokotany.Nom}</span>
               </div>
               
-              <div className="flex items-start gap-2">
-                <CursorArrowRippleIcon className="h-5 w-5 text-green-500 mt-1" />
-                <span><span className="font-semibold">Coordonnées :</span> ({fokotany.px}, {fokotany.py})</span>
+              {/* Détails de localisation */}
+              <div className="mt-4 mb-4 border border-gray-100 rounded-lg p-4 bg-white">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                  <CursorArrowRippleIcon className="h-6 w-6 mr-2 text-blue-500" />
+                  Localisation
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="mb-4">
+                      <span className="block text-sm text-gray-600 mb-1">
+                        <strong className="text-gray-700">Longitude:</strong> {Number(fokotany.px).toFixed(6)}
+                      </span>
+                      <span className="block text-sm text-gray-600 mb-1">
+                        <strong className="text-gray-700">Latitude:</strong> {Number(fokotany.py).toFixed(6)}
+                      </span>
+                    </div>
+                    
+                    <div className="text-sm text-gray-500">
+                      <p>Cliquez sur la carte pour agrandir et voir plus de détails.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[200px] border border-gray-200 rounded-lg overflow-hidden">
+                    <LocationMap 
+                      initialPosition={[Number(fokotany.py), Number(fokotany.px)]} 
+                      height="100%" 
+                      readOnly={true}
+                    />
+                  </div>
+                </div>
               </div>
               
               <div className="flex items-start gap-2">
@@ -239,7 +269,17 @@ function FokotanyPopup({ fokotany, onClose }: FokotanyPopupProps) {
                 </span>
               </div>
               
-              <div className="mt-6">
+              <div className="mt-6 flex flex-wrap gap-2">
+                {/* Composant d'édition */}
+                <EditFokotany 
+                  fokotany={fokotany} 
+                  onEditSuccess={() => {
+                    onClose();
+                    window.location.reload();
+                  }}
+                />
+                
+                {/* Bouton de suppression */}
                 <button
                   onClick={handleDelete}
                   disabled={loading}

@@ -79,6 +79,10 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const [vaccineRappels, setVaccineRappels] = useState<{[key: string]: Rappel[]}>({});
   // État pour stocker les rappels administrés
   const [administeredRappels, setAdministeredRappels] = useState<{[key: string]: boolean[]}>({});
+  // État pour stocker le nombre de rappels faits par vaccin
+  const [vaccineAdministeredRappelsCount, setVaccineAdministeredRappelsCount] = useState<{[key: string]: number}>({});
+  // État pour stocker le nombre total d'administrations par vaccin
+  const [vaccineTotalAdministrations, setVaccineTotalAdministrations] = useState<{[key: string]: number}>({});
   // État pour suivre les vaccins dont tous les rappels ont été administrés
   const [fullyAdministeredVaccines, setFullyAdministeredVaccines] = useState<Record<string, boolean>>({});
 
@@ -304,14 +308,44 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             }
           }
           
+          // Calculer le nombre de rappels faits pour chaque vaccin
+          const rappelsCountMap: {[key: string]: number} = {};
+          const totalAdministrationsMap: {[key: string]: number} = {};
+          
+          // Pour chaque vaccin, compter les rappels réellement administrés
+          for (const vaccine of data) {
+            const vaccineId = vaccine.id;
+            const vaccineVaccinId = vaccine.vaccin_id;
+            
+            // Compter les rappels administrés pour ce vaccin
+            let rappelsCount = 0;
+            if (administeredMap[vaccineId]) {
+              rappelsCount = administeredMap[vaccineId].filter(Boolean).length;
+            }
+            
+            // Stocker les compteurs par les deux clés pour assurer la compatibilité
+            rappelsCountMap[vaccineId] = rappelsCount;
+            rappelsCountMap[vaccineVaccinId] = rappelsCount;
+            
+            // Stocker le nombre total d'administrations (rappels administrés + 1 pour la dose initiale)
+            totalAdministrationsMap[vaccineId] = rappelsCount + 1;
+            totalAdministrationsMap[vaccineVaccinId] = rappelsCount + 1;
+            
+            console.log(`Vaccin ${vaccine.name || vaccine.Nom}: ${rappelsCount} rappels faits, ${rappelsCount + 1} doses au total`);
+          }
+          
           // CORRECTION: Mettre à jour complètement les états avec des nouvelles références
           console.log('===== Mise à jour des states avec les données calculées =====');
           console.log('Nouvelle carte des rappels administrés:', administeredMap);
           console.log('Rappels avec la propriété administered mise à jour:', rappelsMapCopy);
+          console.log('Nombre de rappels faits par vaccin:', rappelsCountMap);
+          console.log('Nombre total d\'administrations par vaccin:', totalAdministrationsMap);
           
           // Mise à jour atomique des états pour éviter les problèmes de rendu
           setAdministeredRappels({...administeredMap});
           setVaccineRappels({...rappelsMapCopy});
+          setVaccineAdministeredRappelsCount({...rappelsCountMap});
+          setVaccineTotalAdministrations({...totalAdministrationsMap});
           
           console.log("===== Fin de la vérification des rappels administrés =====");
         };
@@ -1125,6 +1159,17 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                         Dernière date: {new Date(groupedVaccine.vaccine.date_vaccination).toLocaleDateString()}
                       </p>
                       
+                      {/* Affichage du nombre de rappels faits */}
+                      <div className="mt-2 flex flex-col gap-1">
+                        {vaccineAdministeredRappelsCount[groupedVaccine.vaccine.id] !== undefined && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-50 text-green-800 border border-green-200">
+                            <span className="font-bold">{groupedVaccine.count - 1}</span>
+                            <span className="ml-1">rappel{vaccineAdministeredRappelsCount[groupedVaccine.vaccine.id] > 1 ? 's' : ''} fait{vaccineAdministeredRappelsCount[groupedVaccine.vaccine.id] > 1 ? 's' : ''}</span>
+                          </span>
+                        )}
+                       
+                      </div>
+                      
                       {/* Affichage des rappels avec cases à cocher */}
                       {vaccineRappels[groupedVaccine.vaccine.id] && vaccineRappels[groupedVaccine.vaccine.id].length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
@@ -1164,7 +1209,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                                   key={`${groupedVaccine.vaccine.id}-rappel-${index}`} 
                                   className={`flex items-center gap-2 ${bgColor} px-3 py-2 rounded-md border ${borderColor} shadow-sm transition-all hover:shadow-md`}
                                 >
-                                  {isRappelAdministered ? (
+                                  {index < groupedVaccine.count-1 ? (
                                     <div className="flex items-center gap-1">
                                       <CheckCircleIcon className="h-5 w-5 text-green-600" />
                                       <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Administré</span>

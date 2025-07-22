@@ -178,9 +178,9 @@ function VaccinePopup({ vaccine, onClose }: VaccinePopupProps) {
   };
 
   return (
-      <div>
-        {/* Contenu en deux colonnes */}
-        <div className="p-6 sm:p-8 text-gray-800">
+      <div className="flex flex-col max-h-[85vh]">
+        {/* Contenu en deux colonnes avec défilement */}
+        <div className="p-6 sm:p-8 text-gray-800 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 flex-1">
           {/* Layout en deux colonnes avec grille */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Colonne gauche: informations de base */}

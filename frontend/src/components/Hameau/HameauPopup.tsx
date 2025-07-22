@@ -10,6 +10,8 @@ import axios from "axios";
 import { buildApiUrl } from "../../config/api";
 import { useState, useEffect, useRef } from "react";
 import useNotificationService from "../../hooks/useNotificationService";
+import EditHameau from "./EditHameau";
+import LocationMap from "../shared/LocationMap";
 import {
   PolarAngleAxis,
   PolarRadiusAxis,
@@ -266,11 +268,41 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
                 <span><span className="font-semibold">Coordonnées :</span> ({hameau.px}, {hameau.py})</span>
               </div>
               
+              <div className="mt-6 border border-gray-100 rounded-lg p-4 bg-white">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                  <CursorArrowRippleIcon className="h-6 w-6 mr-2 text-blue-500" />
+                  Localisation
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="mb-4">
+                      <span className="block text-sm text-gray-600 mb-1">
+                        <strong className="text-gray-700">Longitude:</strong> {Number(hameau.px).toFixed(6)}
+                      </span>
+                      <span className="block text-sm text-gray-600 mb-1">
+                        <strong className="text-gray-700">Latitude:</strong> {Number(hameau.py).toFixed(6)}
+                      </span>
+                    </div>
+                    
+                    <div className="text-sm text-gray-500">
+                      <p>Cliquez sur la carte pour agrandir et voir plus de détails.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[200px] border border-gray-200 rounded-lg overflow-hidden">
+                    <LocationMap 
+                      initialPosition={[Number(hameau.py), Number(hameau.px)]} 
+                      height="100%" 
+                      readOnly={true}
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="flex items-start gap-2">
                 <UsersIcon className="h-5 w-5 text-green-500 mt-1" />
-                <span>
-                  <span className="font-semibold">Nombre d'habitants :</span> {hameau.nombre_personne || "Non spécifié"}
-                </span>
+                <span><span className="font-semibold">Nombre d'habitants :</span> {hameau.nombre_personne || "Non spécifié"}</span>
               </div>
               
               <div className="flex items-start gap-2">
@@ -287,11 +319,21 @@ function HameauPopup({ hameau, onClose }: HameauPopupProps) {
                 </span>
               </div>
               
-              <div className="mt-6">
+              <div className="mt-6 flex flex-wrap gap-2">
+                {/* Composant d'édition */}
+                <EditHameau 
+                  hameau={hameau} 
+                  onEditSuccess={() => {
+                    onClose();
+                    window.location.reload();
+                  }}
+                />
+                
+                {/* Bouton de suppression */}
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors rounded-full"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors rounded-full"
                 >
                   <TrashIcon className="h-5 w-5" />
                   {loading ? "Suppression..." : "Supprimer"}
