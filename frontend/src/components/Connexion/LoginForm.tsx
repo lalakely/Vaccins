@@ -52,7 +52,6 @@ function LoginForm() {
     e.preventDefault();
     setError("");
 
- 
     try {
       const response = await fetch(buildApiUrl("/api/auth/login"), {
         method: "POST",
@@ -60,7 +59,22 @@ function LoginForm() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      console.log('Statut de la réponse:', response.status);
+
+      let data;
+      const responseText = await response.text();
+
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.warn('La réponse n\'est pas au format JSON:', responseText.substring(0, 100));
+        data = { message: `Erreur serveur (${response.status})` };
+
+        if (!response.ok) {
+          setError(`Erreur ${response.status}: Le serveur a renvoyé une réponse invalide.`);
+          return;
+        }
+      }
 
       if (response.ok) {
         console.log("🟢 Token reçu :", data.token);
@@ -69,11 +83,11 @@ function LoginForm() {
         login(data.token);
         navigate("/Dashboard");
       } else {
-        setError(data.message || "Une erreur est survenue.");
+        setError(data.message || "Identifiants invalides ou erreur serveur.");
       }
     } catch (error) {
       console.error("Erreur lors de la connexion :", error);
-      setError("Impossible de se connecter. Veuillez réessayer.");
+      setError("Impossible de joindre le serveur. Vérifiez votre connexion.");
     }
   };
 
@@ -148,13 +162,13 @@ function LoginForm() {
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
-              
+
             </div>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4 p-6 rounded-b-xl">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 bg-gray-700 text-white hover:bg-gray-800 transition-colors rounded-full flex items-center justify-center gap-2"
             >
               Connexion

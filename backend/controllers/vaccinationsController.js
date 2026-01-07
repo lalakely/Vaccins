@@ -11,19 +11,19 @@ exports.getAllVaccinations = async (req, res) => {
         `);
         res.json(results);
     } catch (err) {
-        console.error('Error fetching all vaccinations:', err);
-        res.status(500).json({ message: 'Erreur interne du serveur' });
+        console.error('Error:', err);
+        res.status(500).json({ message: 'Erreur interne du serveur', error: err.message });
     }
 };
 
 // Get vaccinations by child ID
 exports.getVaccinationsByChildId = async (req, res) => {
     const enfantId = req.query.enfant_id;
-    
+
     if (!enfantId) {
         return res.status(400).json({ message: 'ID enfant requis' });
     }
-    
+
     try {
         // Utiliser une jointure pour inclure le nom du vaccin
         const [results] = await db.query(`
@@ -32,7 +32,7 @@ exports.getVaccinationsByChildId = async (req, res) => {
             LEFT JOIN Vaccins vac ON v.vaccin_id = vac.id
             WHERE v.enfant_id = ?
         `, [enfantId]);
-        
+
         res.json(results);
     } catch (err) {
         console.error('Error fetching vaccinations by child ID:', err);
@@ -43,24 +43,24 @@ exports.getVaccinationsByChildId = async (req, res) => {
 // Get overdue vaccines for a child
 exports.getOverdueVaccinesByChildId = async (req, res) => {
     const enfantId = req.query.enfant_id;
-    
+
     if (!enfantId) {
         return res.status(400).json({ message: 'ID enfant requis' });
     }
-    
+
     try {
         // Récupérer l'âge de l'enfant en jours
         const [enfantResult] = await db.query(
             'SELECT DATEDIFF(CURRENT_DATE, date_naissance) as age_in_days FROM Enfants WHERE id = ?',
             [enfantId]
         );
-        
+
         if (enfantResult.length === 0) {
             return res.status(404).json({ message: 'Enfant non trouvé' });
         }
-        
+
         const childAgeInDays = enfantResult[0].age_in_days;
-        
+
         // Récupérer tous les vaccins dont la durée (âge recommandé) est inférieure à l'âge de l'enfant
         // mais qui n'ont pas encore été administrés à cet enfant
         const [results] = await db.query(`
@@ -71,7 +71,7 @@ exports.getOverdueVaccinesByChildId = async (req, res) => {
                 SELECT vaccin_id FROM Vaccinations WHERE enfant_id = ?
             )
         `, [childAgeInDays, enfantId]);
-        
+
         res.json(results);
     } catch (err) {
         console.error('Error fetching overdue vaccines by child ID:', err);
@@ -82,7 +82,7 @@ exports.getOverdueVaccinesByChildId = async (req, res) => {
 // Get a single vaccination by ID
 exports.getVaccinationById = async (req, res) => {
     const id = req.params.id;
-    
+
     try {
         // Utiliser une jointure pour inclure le nom du vaccin
         const [results] = await db.query(`
@@ -91,11 +91,11 @@ exports.getVaccinationById = async (req, res) => {
             LEFT JOIN Vaccins vac ON v.vaccin_id = vac.id
             WHERE v.id = ?
         `, [id]);
-        
+
         if (results.length === 0) {
             return res.status(404).json({ message: 'Vaccination non trouvée' });
         }
-        
+
         res.json(results[0]);
     } catch (err) {
         console.error('Error fetching vaccination by ID:', err);
@@ -106,51 +106,51 @@ exports.getVaccinationById = async (req, res) => {
 // Create a new vaccination
 exports.createVaccination = async (req, res) => {
     const { enfant_id, vaccin_id, date_vaccination } = req.body;
-    
+
     try {
         // Vérifier si le vaccin existe, s'il est périmé et s'il a du stock disponible
         const [vaccineInfo] = await db.query(
             'SELECT id, Nom, Stock, Date_peremption FROM Vaccins WHERE id = ?',
             [vaccin_id]
         );
-        
+
         // Vérifier si le vaccin existe
         if (vaccineInfo.length === 0) {
             return res.status(404).json({ message: 'Vaccin non trouvé' });
         }
-        
+
         const vaccin = vaccineInfo[0];
         const today = new Date();
         const peremptionDate = vaccin.Date_peremption ? new Date(vaccin.Date_peremption) : null;
-        
+
         // Vérifier si le vaccin est périmé
         if (peremptionDate && peremptionDate < today) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Ce vaccin est périmé et ne peut pas être administré',
                 peremption: peremptionDate
             });
         }
-        
+
         // Vérifier si le stock est suffisant
         if (vaccin.Stock <= 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Le stock de ce vaccin est épuisé',
                 stock: vaccin.Stock
             });
         }
-        
+
         // Insérer la vaccination
         const [result] = await db.query(
             'INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination) VALUES (?, ?, ?)',
             [enfant_id, vaccin_id, date_vaccination]
         );
-        
+
         // Mettre à jour le stock du vaccin
         await db.query(
             'UPDATE Vaccins SET Stock = Stock - 1 WHERE id = ? AND Stock > 0',
             [vaccin_id]
         );
-        
+
         res.status(201).json({
             id: result.insertId,
             enfant_id,
@@ -159,7 +159,7 @@ exports.createVaccination = async (req, res) => {
             name: vaccin.Nom,
             newStock: vaccin.Stock - 1
         });
-        
+
     } catch (err) {
         console.error('Error creating vaccination:', err);
         res.status(500).json({ message: 'Erreur interne du serveur' });
@@ -170,17 +170,17 @@ exports.createVaccination = async (req, res) => {
 exports.updateVaccination = async (req, res) => {
     const id = req.params.id;
     const { enfant_id, vaccin_id, date_vaccination, notes } = req.body;
-    
+
     try {
         const [result] = await db.query(
             'UPDATE Vaccinations SET enfant_id = ?, vaccin_id = ?, date_vaccination = ?, notes = ? WHERE id = ?',
             [enfant_id, vaccin_id, date_vaccination, notes, id]
         );
-        
+
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Vaccination non trouvée' });
         }
-        
+
         res.json({ id, enfant_id, vaccin_id, date_vaccination, notes });
     } catch (err) {
         console.error('Error updating vaccination:', err);
@@ -191,14 +191,14 @@ exports.updateVaccination = async (req, res) => {
 // Delete a vaccination
 exports.deleteVaccination = async (req, res) => {
     const id = req.params.id;
-    
+
     try {
         const [result] = await db.query('DELETE FROM Vaccinations WHERE id = ?', [id]);
-        
+
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Vaccination non trouvée' });
         }
-        
+
         res.json({ message: 'Vaccination supprimée avec succès' });
     } catch (err) {
         console.error('Error deleting vaccination:', err);
@@ -209,7 +209,7 @@ exports.deleteVaccination = async (req, res) => {
 // Get count of children vaccinated with a specific vaccine
 exports.getCountChildrenByVaccine = async (req, res) => {
     const vaccinId = req.params.id;
-    
+
     try {
         const [results] = await db.query(
             `SELECT COUNT(DISTINCT enfant_id) AS count 
@@ -217,7 +217,7 @@ exports.getCountChildrenByVaccine = async (req, res) => {
              WHERE vaccin_id = ?`,
             [vaccinId]
         );
-        
+
         res.json({ count: results[0].count });
     } catch (err) {
         console.error('Error counting children by vaccine:', err);
@@ -228,11 +228,11 @@ exports.getCountChildrenByVaccine = async (req, res) => {
 // Vérifier si un vaccin peut être administré (prérequis satisfaits)
 exports.checkVaccinePrerequisites = async (req, res) => {
     const { vaccin_id, enfant_id } = req.query;
-    
+
     if (!vaccin_id || !enfant_id) {
         return res.status(400).json({ message: 'ID vaccin et ID enfant requis' });
     }
-    
+
     try {
         // 1. Vérifier si le vaccin a des prérequis
         const [prerequisites] = await db.query(`
@@ -247,34 +247,34 @@ exports.checkVaccinePrerequisites = async (req, res) => {
             WHERE 
                 vp.vaccin_id = ?
         `, [vaccin_id]);
-        
+
         // Si pas de prérequis, le vaccin peut être administré
         if (prerequisites.length === 0) {
-            return res.json({ 
+            return res.json({
                 canBeAdministered: true,
                 message: "Ce vaccin peut être administré.",
                 missingPrerequisites: []
             });
         }
-        
+
         // 2. Vérifier quels prérequis ont déjà été administrés à l'enfant
         const [administeredVaccines] = await db.query(`
             SELECT vaccin_id 
             FROM Vaccinations 
             WHERE enfant_id = ?
         `, [enfant_id]);
-        
+
         const administeredVaccineIds = administeredVaccines.map(v => v.vaccin_id);
-        
+
         // 3. Identifier les prérequis manquants
         const missingPrerequisites = prerequisites.filter(
             prereq => !administeredVaccineIds.includes(prereq.prerequis_id)
         );
-        
+
         // 4. Déterminer si le vaccin peut être administré
         const strictMissingPrerequisites = missingPrerequisites.filter(prereq => prereq.strict);
         const canBeAdministered = strictMissingPrerequisites.length === 0;
-        
+
         // 5. Préparer le message approprié
         let message = "";
         if (canBeAdministered) {
@@ -286,7 +286,7 @@ exports.checkVaccinePrerequisites = async (req, res) => {
         } else {
             message = "Ce vaccin ne peut pas être administré car certains prérequis stricts sont manquants.";
         }
-        
+
         res.json({
             canBeAdministered,
             message,
@@ -296,7 +296,7 @@ exports.checkVaccinePrerequisites = async (req, res) => {
                 strict: prereq.strict
             }))
         });
-        
+
     } catch (err) {
         console.error('Error checking vaccine prerequisites:', err);
         res.status(500).json({ message: 'Erreur interne du serveur' });
@@ -306,11 +306,11 @@ exports.checkVaccinePrerequisites = async (req, res) => {
 // Check if a rappel has been administered
 exports.checkRappelAdministered = async (req, res) => {
     const { enfant_id, vaccin_id, rappel_index } = req.query;
-    
+
     if (!enfant_id || !vaccin_id) {
         return res.status(400).json({ message: 'Paramètres manquants: enfant_id et vaccin_id sont requis' });
     }
-    
+
     try {
         // Nouvelle logique: compter le nombre d'administrations pour ce vaccin à cet enfant
         const [administrations] = await db.query(`
@@ -319,13 +319,13 @@ exports.checkRappelAdministered = async (req, res) => {
             WHERE v.enfant_id = ?
             AND v.vaccin_id = ?
         `, [enfant_id, vaccin_id]);
-        
+
         // Nombre total d'administrations (incluant la première dose)
         const totalAdministrations = administrations[0].count;
-        
+
         // Calcul du nombre de rappels administrés: nombre d'administrations - 1 (première dose)
         const rappelsAdministered = Math.max(0, totalAdministrations - 1);
-        
+
         // Si rappel_index est fourni, vérifier si ce rappel spécifique est administré
         let administered = false;
         if (rappel_index !== undefined) {
@@ -338,7 +338,7 @@ exports.checkRappelAdministered = async (req, res) => {
             if (!date_rappel) {
                 return res.status(400).json({ message: 'Paramètre date_rappel manquant' });
             }
-            
+
             // Méthode 1: Vérifier si un vaccin du même type a été administré après la date du rappel
             const [directResults] = await db.query(`
                 SELECT COUNT(*) as count
@@ -347,7 +347,7 @@ exports.checkRappelAdministered = async (req, res) => {
                 AND v.vaccin_id = ?
                 AND v.date_vaccination >= ?
             `, [enfant_id, vaccin_id, date_rappel]);
-            
+
             // Méthode 2: Vérifier si un rappel a été enregistré dans la remarque d'une vaccination
             const [rappelResults] = await db.query(`
                 SELECT COUNT(*) as count
@@ -355,18 +355,18 @@ exports.checkRappelAdministered = async (req, res) => {
                 WHERE v.enfant_id = ?
                 AND v.remarque LIKE ?
             `, [enfant_id, `%Rappel du vaccin ${vaccin_id}%`]);
-            
+
             // Le rappel est administré si l'une des deux méthodes trouve un résultat
             administered = directResults[0].count > 0 || rappelResults[0].count > 0;
         }
-        
+
         console.log(`checkRappelAdministered - enfant_id: ${enfant_id}, vaccin_id: ${vaccin_id}, rappel_index: ${rappel_index}, administered: ${administered}`);
         console.log(`  - Total administrations: ${totalAdministrations}, Rappels effectués: ${rappelsAdministered}`);
-        
-        res.json({ 
-            administered, 
-            totalAdministrations, 
-            rappelsAdministered 
+
+        res.json({
+            administered,
+            totalAdministrations,
+            rappelsAdministered
         });
     } catch (err) {
         console.error('Error checking if rappel has been administered:', err);
@@ -377,131 +377,131 @@ exports.checkRappelAdministered = async (req, res) => {
 // Marquer un rappel comme administré
 exports.markRappelAdministered = async (req, res) => {
     const { enfant_id, parent_vaccin_id, rappel_vaccin_id, date_administration } = req.body;
-    
+
     console.log('markRappelAdministered - Données reçues:', { enfant_id, parent_vaccin_id, rappel_vaccin_id, date_administration });
-    
+
     if (!enfant_id || !parent_vaccin_id || !rappel_vaccin_id) {
         console.log('markRappelAdministered - Données manquantes');
         return res.status(400).json({ message: 'Données manquantes pour marquer le rappel comme administré' });
     }
-    
+
     try {
         const { enfant_id, parent_vaccin_id, rappel_vaccin_id, date_administration } = req.body;
-        
+
         console.log('markRappelAdministered - Données reçues:', req.body);
-        
+
         // Vérifier si le vaccin de rappel existe, s'il est périmé et s'il a du stock disponible
         const [rappelVaccinInfo] = await db.query(
             'SELECT id, Nom, Stock, Date_peremption FROM Vaccins WHERE id = ?',
             [rappel_vaccin_id]
         );
-        
+
         // Vérifier si le vaccin de rappel existe
         if (rappelVaccinInfo.length === 0) {
             return res.status(404).json({ message: 'Vaccin de rappel non trouvé' });
         }
-        
+
         const rappelVaccin = rappelVaccinInfo[0];
         const today = new Date();
         const peremptionDate = rappelVaccin.Date_peremption ? new Date(rappelVaccin.Date_peremption) : null;
-        
+
         // Vérifier si le vaccin est périmé
         if (peremptionDate && peremptionDate < today) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Ce vaccin de rappel est périmé et ne peut pas être administré',
                 peremption: peremptionDate
             });
         }
-        
+
         // Vérifier si le stock est suffisant
         if (rappelVaccin.Stock <= 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Le stock de ce vaccin de rappel est épuisé',
                 stock: rappelVaccin.Stock
             });
         }
-        
+
         // Vérifier si le vaccin parent existe dans la table Vaccins
         const [parentVaccinExists] = await db.query('SELECT id FROM Vaccins WHERE id = ?', [parent_vaccin_id]);
         if (parentVaccinExists.length === 0) {
             console.log('markRappelAdministered - Vaccin parent non trouvé dans la table Vaccins:', parent_vaccin_id);
             return res.status(404).json({ message: `Vaccin parent non trouvé dans la table Vaccins: ${parent_vaccin_id}` });
         }
-        
+
         // Vérifier si l'enfant a déjà reçu ce vaccin parent
         const [parentVaccinationExists] = await db.query(
-            'SELECT id FROM Vaccinations WHERE enfant_id = ? AND vaccin_id = ?', 
+            'SELECT id FROM Vaccinations WHERE enfant_id = ? AND vaccin_id = ?',
             [enfant_id, parent_vaccin_id]
         );
         if (parentVaccinationExists.length === 0) {
             console.log('markRappelAdministered - Aucune vaccination parent trouvée pour cet enfant:', { enfant_id, parent_vaccin_id });
             return res.status(404).json({ message: `L'enfant n'a pas reçu le vaccin parent ${parent_vaccin_id}` });
         }
-        
+
         // Vérifier si le rappel existe dans VaccinSuite (auto-référence)
         console.log('markRappelAdministered - Recherche dans VaccinSuite (auto-référence):', { rappel_vaccin_id });
-        
+
         const [suiteCheck] = await db.query(`
             SELECT * FROM VaccinSuite 
             WHERE vaccin_id = ? AND suite_id = ? AND type = 'r'
         `, [rappel_vaccin_id, rappel_vaccin_id]);
-        
+
         console.log('markRappelAdministered - Résultat de la recherche:', suiteCheck);
-        
+
         if (suiteCheck.length === 0) {
             console.log('markRappelAdministered - Relation de rappel non trouvée (auto-référence)');
-            
+
             // Essayer de trouver si le vaccin est un rappel (même s'il n'est pas auto-référencé)
             const [anyRappelCheck] = await db.query(`
                 SELECT * FROM VaccinSuite 
                 WHERE (vaccin_id = ? OR suite_id = ?) AND type = 'r'
             `, [rappel_vaccin_id, rappel_vaccin_id]);
-            
+
             console.log('markRappelAdministered - Résultat de la recherche générale:', anyRappelCheck);
-            
+
             if (anyRappelCheck.length === 0) {
                 // Si aucune relation de rappel n'est trouvée, on accepte quand même pour les besoins du test
                 console.log('markRappelAdministered - Aucune relation de rappel trouvée, mais on continue pour le test');
             }
         }
-        
+
         // Trouver la vaccination parent pour obtenir son ID
         const [parentVaccination] = await db.query(`
             SELECT id FROM Vaccinations 
             WHERE enfant_id = ? AND vaccin_id = ? 
             ORDER BY date_vaccination DESC LIMIT 1
         `, [enfant_id, parent_vaccin_id]);
-        
+
         console.log('markRappelAdministered - Vaccination parent:', parentVaccination);
-        
+
         // Vérifier si tous les rappels d'un vaccin ont été administrés
 
         // Ajouter d'autres fonctions du contrôleur icination pour le rappel
         // Utiliser les colonnes existantes dans la table Vaccinations
         // Stocker l'information de rappel dans la remarque
-        const remarque = parentVaccination.length > 0 
-            ? `Rappel du vaccin ${parent_vaccin_id} (vaccination #${parentVaccination[0].id})` 
+        const remarque = parentVaccination.length > 0
+            ? `Rappel du vaccin ${parent_vaccin_id} (vaccination #${parentVaccination[0].id})`
             : `Rappel du vaccin ${parent_vaccin_id}`;
-        
-        console.log('markRappelAdministered - Insertion de la vaccination:', { 
-            enfant_id, 
-            vaccin_id: rappel_vaccin_id, 
+
+        console.log('markRappelAdministered - Insertion de la vaccination:', {
+            enfant_id,
+            vaccin_id: rappel_vaccin_id,
             date_vaccination: date_administration, // Utiliser date_administration comme date_vaccination
             remarque
         });
-        
+
         const [result] = await db.query(`
             INSERT INTO Vaccinations (enfant_id, vaccin_id, date_vaccination, remarque)
             VALUES (?, ?, ?, ?)
         `, [enfant_id, rappel_vaccin_id, date_administration, remarque]);
-        
+
         // Mettre à jour le stock du vaccin de rappel
         await db.query(
             'UPDATE Vaccins SET Stock = Stock - 1 WHERE id = ? AND Stock > 0',
             [rappel_vaccin_id]
         );
-        
-        res.status(201).json({ 
+
+        res.status(201).json({
             message: 'Rappel marqué comme administré avec succès',
             id: result.insertId,
             newStock: rappelVaccin.Stock - 1
@@ -515,18 +515,18 @@ exports.markRappelAdministered = async (req, res) => {
 // Compter les vaccinations d'un enfant pour un vaccin spécifique
 exports.countVaccinationsByChildAndVaccine = async (req, res) => {
     const { enfant_id, vaccin_id } = req.query;
-    
+
     if (!enfant_id || !vaccin_id) {
         return res.status(400).json({ message: 'ID enfant et ID vaccin requis' });
     }
-    
+
     try {
         const [results] = await db.query(`
             SELECT COUNT(*) as count
             FROM Vaccinations
             WHERE enfant_id = ? AND vaccin_id = ?
         `, [enfant_id, vaccin_id]);
-        
+
         res.json({ count: results[0].count });
     } catch (err) {
         console.error('Error counting vaccinations:', err);
@@ -537,11 +537,11 @@ exports.countVaccinationsByChildAndVaccine = async (req, res) => {
 // Vérifier si un vaccin est un rappel d'un vaccin existant
 exports.checkRappelStatus = async (req, res) => {
     const { enfant_id, vaccin_id } = req.query;
-    
+
     if (!enfant_id || !vaccin_id) {
         return res.status(400).json({ message: 'ID enfant et ID vaccin requis' });
     }
-    
+
     try {
         // Vérifier si ce vaccin est un rappel d'un vaccin existant en utilisant la table VaccinSuite
         // La table VaccinSuite contient les informations sur les rappels avec le champ type='rappel'
@@ -551,18 +551,18 @@ exports.checkRappelStatus = async (req, res) => {
             JOIN Vaccinations v ON vs.vaccin_id = v.vaccin_id
             WHERE v.enfant_id = ? AND vs.suite_id = ? AND vs.type = 'rappel'
         `, [enfant_id, vaccin_id]);
-        
+
         if (suites.length > 0) {
             // C'est un rappel d'un vaccin existant
-            res.json({ 
-                isRappel: true, 
-                parentVaccineId: suites[0].parent_vaccin_id 
+            res.json({
+                isRappel: true,
+                parentVaccineId: suites[0].parent_vaccin_id
             });
         } else {
             // Ce n'est pas un rappel
-            res.json({ 
-                isRappel: false, 
-                parentVaccineId: null 
+            res.json({
+                isRappel: false,
+                parentVaccineId: null
             });
         }
     } catch (err) {
@@ -574,11 +574,11 @@ exports.checkRappelStatus = async (req, res) => {
 // Get upcoming vaccines for a child
 exports.getUpcomingVaccinesByChildId = async (req, res) => {
     const enfantId = req.query.enfant_id;
-    
+
     if (!enfantId) {
         return res.status(400).json({ message: 'ID enfant requis' });
     }
-    
+
     try {
         // 1. Récupérer tous les vaccins administrés à l'enfant
         const [administeredVaccines] = await db.query(`
@@ -587,14 +587,14 @@ exports.getUpcomingVaccinesByChildId = async (req, res) => {
             LEFT JOIN Vaccins vac ON v.vaccin_id = vac.id
             WHERE v.enfant_id = ?
         `, [enfantId]);
-        
+
         if (administeredVaccines.length === 0) {
             return res.json([]); // Aucun vaccin administré, donc aucun vaccin à suivre
         }
-        
+
         // 2. Pour chaque vaccin administré, trouver les vaccins à suivre (suite)
         const administeredVaccinIds = administeredVaccines.map(vaccine => vaccine.vaccin_id);
-        
+
         // Récupérer tous les vaccins à suivre pour les vaccins administrés avec leurs détails
         // Inclure également les rappels des vaccins administrés
         const [upcomingVaccines] = await db.query(`
@@ -622,17 +622,17 @@ exports.getUpcomingVaccinesByChildId = async (req, res) => {
                     ))
                 )
         `, [enfantId, administeredVaccinIds, enfantId]);
-        
+
         // 3. Calculer le nombre de jours restant pour chaque vaccin à suivre
         const today = new Date();
         const upcomingVaccinesWithDaysRemaining = upcomingVaccines.map(vaccine => {
             const parentVaccinationDate = new Date(vaccine.parent_date_vaccination);
             const dueDate = new Date(parentVaccinationDate);
             dueDate.setDate(dueDate.getDate() + vaccine.delai);
-            
+
             // Calculer le nombre de jours restant (positif si la date est dans le futur, négatif si elle est dans le passé)
             const daysRemaining = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-            
+
             return {
                 id: vaccine.suite_id, // ID du vaccin à suivre
                 parent_id: vaccine.parent_id, // ID du vaccin parent
@@ -645,7 +645,7 @@ exports.getUpcomingVaccinesByChildId = async (req, res) => {
                 type: vaccine.type // Ajout du type (rappel, strict, recommande)
             };
         });
-        
+
         res.json(upcomingVaccinesWithDaysRemaining);
     } catch (err) {
         console.error('Error fetching upcoming vaccines by child ID:', err);
@@ -655,11 +655,11 @@ exports.getUpcomingVaccinesByChildId = async (req, res) => {
 // Vérifier si tous les rappels d'un vaccin ont été administrés
 exports.checkAllRappelsAdministered = async (req, res) => {
     const { enfant_id, vaccin_id } = req.query;
-    
+
     if (!enfant_id || !vaccin_id) {
         return res.status(400).json({ message: 'ID enfant et ID vaccin requis' });
     }
-    
+
     try {
         // 1. Vérifier combien de fois ce vaccin a été administré à l'enfant
         const [administeredCount] = await db.query(`
@@ -667,30 +667,30 @@ exports.checkAllRappelsAdministered = async (req, res) => {
             FROM Vaccinations 
             WHERE enfant_id = ? AND vaccin_id = ?
         `, [enfant_id, vaccin_id]);
-        
+
         // 2. Vérifier combien de rappels sont prévus pour ce vaccin (dans VaccinSuite)
         const [rappelsCount] = await db.query(`
             SELECT COUNT(*) as count 
             FROM VaccinSuite 
             WHERE vaccin_id = ? AND type = 'rappel'
         `, [vaccin_id]);
-        
+
         // Le nombre total de doses autorisées est 1 (dose initiale) + nombre de rappels
         const totalAllowedDoses = 1 + (rappelsCount[0].count || 0);
         const currentAdministeredDoses = administeredCount[0].count || 0;
-        
+
         console.log(`checkAllRappelsAdministered - Vaccin ${vaccin_id} pour enfant ${enfant_id}:`, {
             administeredDoses: currentAdministeredDoses,
             totalAllowedDoses: totalAllowedDoses,
             allAdministered: currentAdministeredDoses >= totalAllowedDoses
         });
-        
+
         res.json({
             administeredDoses: currentAdministeredDoses,
             totalAllowedDoses: totalAllowedDoses,
             allAdministered: currentAdministeredDoses >= totalAllowedDoses
         });
-        
+
     } catch (error) {
         console.error('Erreur lors de la vérification des rappels administrés:', error);
         res.status(500).json({ message: 'Erreur lors de la vérification des rappels administrés' });
@@ -715,7 +715,7 @@ exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
             FROM Enfants e
             LIMIT 10 -- Limitation pour éviter de surcharger la base de données
         `);
-        
+
         console.log(`Récupéré ${enfants.length} enfants`);
 
         // Tableau pour stocker les enfants avec leurs vaccins en retard
@@ -731,10 +731,10 @@ exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
                     FROM Vaccinations 
                     WHERE enfant_id = ?
                 `, [enfant.id]);
-                
+
                 const administeredVaccineIds = administeredVaccines.map(v => v.vaccin_id);
                 console.log(`Vaccins administrés: ${JSON.stringify(administeredVaccineIds)}`);
-            
+
                 // Récupérer les vaccins qui auraient déjà dû être administrés selon l'âge de l'enfant
                 let overdueVaccines = [];
                 try {
@@ -746,8 +746,8 @@ exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
                         AND v.id NOT IN (${administeredVaccineIds.length > 0 ? '?' : 'SELECT 0'})
                     `;
                     console.log('Requête overdueVaccines:', query);
-                    const params = administeredVaccineIds.length > 0 ? 
-                        [enfant.date_naissance, enfant.age_in_days, administeredVaccineIds] : 
+                    const params = administeredVaccineIds.length > 0 ?
+                        [enfant.date_naissance, enfant.age_in_days, administeredVaccineIds] :
                         [enfant.date_naissance, enfant.age_in_days];
                     console.log('Paramètres:', JSON.stringify(params));
                     [overdueVaccines] = await db.query(query, params);
@@ -756,7 +756,7 @@ exports.getAllChildrenWithOverdueVaccines = async (req, res) => {
                     console.error('Erreur lors de la requête overdueVaccines:', error);
                     overdueVaccines = [];
                 }
-            
+
                 // Également vérifier les rappels en retard (les suites avec un délai)
                 let overdueRappels = [];
                 try {

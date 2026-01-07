@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { buildApiUrl } from '../config/api';
 
 // Configuration de base pour tous les appels API
@@ -90,7 +90,7 @@ class ApiService {
     const retryDelay = config.retryDelay || 1000; // 1 seconde par défaut
     const timeout = config.timeout || DEFAULT_TIMEOUT;
     const silentError = config.silentError || false;
-    
+
     // Ajouter le token d'authentification s'il existe
     const token = localStorage.getItem('token');
     const headers = {
@@ -120,11 +120,11 @@ class ApiService {
       return response;
     } catch (error: any) {
       clearTimeout(timeoutId);
-      
+
       // Gérer les différents types d'erreurs
       if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
         console.warn(`Timeout lors de la requête ${method} ${url}`);
-        
+
         // Retry si des tentatives sont encore disponibles
         if (retries > 0) {
           console.log(`Nouvelle tentative (${MAX_RETRIES - retries + 1}/${MAX_RETRIES}) dans ${retryDelay}ms...`);
@@ -135,7 +135,7 @@ class ApiService {
         // Erreur avec réponse du serveur (400, 404, 500, etc.)
         if (!silentError) {
           console.warn(`Erreur ${error.response.status} lors de la requête ${method} ${url}`);
-          
+
           // Si c'est une erreur 5xx (erreur serveur), on peut retry
           if (error.response.status >= 500 && retries > 0) {
             console.log(`Nouvelle tentative (${MAX_RETRIES - retries + 1}/${MAX_RETRIES}) dans ${retryDelay}ms...`);
@@ -149,7 +149,7 @@ class ApiService {
           console.error(`Erreur lors de la requête ${method} ${url}:`, error.message);
         }
       }
-      
+
       // Propager l'erreur
       throw error;
     }

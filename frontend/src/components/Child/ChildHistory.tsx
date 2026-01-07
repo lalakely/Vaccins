@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ApiService from "@/utils/apiService";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -22,8 +22,7 @@ import {
   FileText,
   Plus,
   Edit,
-  Trash,
-  Printer
+  Trash
 } from "lucide-react";
 import {
   Dialog,
@@ -33,8 +32,6 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useReactToPrint } from "react-to-print";
-import ChildPrintView from "./ChildPrintView";
 
 // Interface pour les entrées d'historique
 interface HistoryItem {
@@ -51,38 +48,6 @@ interface HistoryItem {
   history_type: 'regular' | 'deletion';
 }
 
-// Interface pour les vaccins
-interface Vaccine {
-  id: string;
-  vaccin_id: string;
-  Nom: string;
-  name: string;
-  date_vaccination: string;
-}
-
-// Interface pour les rappels
-interface Rappel {
-  delai: number;
-  description: string;
-  id?: string;
-  vaccin_id?: string;
-}
-
-// Interface pour l'enfant
-interface Child {
-  ID?: string;
-  Nom: string;
-  Prenom: string;
-  CODE?: string;
-  date_naissance: string;
-  SEXE: string;
-  NomMere?: string;
-  NomPere?: string;
-  Domicile?: string;
-  Fokotany?: string;
-  Hameau?: string;
-  Telephone?: string;
-}
 
 // Interface pour les changements détectés
 interface Change {
@@ -100,18 +65,9 @@ export default function ChildHistory() {
   const [selectedHistory, setSelectedHistory] = useState<HistoryItem | null>(null);
   // Plus de mode de démonstration - utiliser uniquement l'API réelle
   const itemsPerPage = 10;
-  
-  // États pour l'impression
-  const [selectedChildData, setSelectedChildData] = useState<Child | null>(null);
-  const [childVaccines, setChildVaccines] = useState<Vaccine[]>([]);
-  const [vaccineRappels, setVaccineRappels] = useState<{[key: string]: Rappel[]}>({});
-  const [administeredRappels, setAdministeredRappels] = useState<{[key: string]: boolean[]}>({});
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
-  const [printLoading, setPrintLoading] = useState(false);
-  
-  // Référence pour l'impression
-  const printRef = useRef<HTMLDivElement>(null);
-  
+
+  // Accès au système de notifications
+
   // Accès au système de notifications
   const { addNotification } = useNotification();
 
@@ -128,7 +84,7 @@ export default function ChildHistory() {
   const fetchHistoryData = async () => {
     try {
       setLoading(true);
-      
+
       // Vérifier si l'API est disponible
       try {
         const response = await ApiService.get("/api/history", {
@@ -158,7 +114,7 @@ export default function ChildHistory() {
       console.error("Erreur lors de la récupération de l'historique:", error);
       setHistoryData([]);
       // Erreur lors de la récupération des données
-      
+
       addNotification({
         id: Date.now(),
         title: "Erreur de chargement",
@@ -190,7 +146,7 @@ export default function ChildHistory() {
       } else {
         throw new Error("Type d'historique non reconnu");
       }
-      
+
       addNotification({
         id: Date.now(),
         title: "Succès",
@@ -200,14 +156,14 @@ export default function ChildHistory() {
         isRead: false,
         createdAt: new Date().toISOString()
       });
-      
+
       // Actualiser les données après la réversion
       fetchHistoryData();
-      
+
       return response.data;
     } catch (error: any) {
       console.error("Erreur lors de l'annulation de la modification:", error);
-      
+
       addNotification({
         id: Date.now(),
         title: "Erreur",
@@ -217,7 +173,7 @@ export default function ChildHistory() {
         isRead: false,
         createdAt: new Date().toISOString()
       });
-      
+
       throw error;
     }
   };
@@ -277,22 +233,22 @@ export default function ChildHistory() {
   // Fonction pour comparer les données avant/après et identifier les changements
   const getChanges = (oldData: any, newData: any): Change[] => {
     const changes: Change[] = [];
-    
+
     if (!oldData || !newData) {
       return changes;
     }
-    
+
     try {
       const oldObj = typeof oldData === 'string' ? JSON.parse(oldData) : oldData;
       const newObj = typeof newData === 'string' ? JSON.parse(newData) : newData;
-      
+
       // Vérifier les champs modifiés
       const allKeys = [...new Set([...Object.keys(oldObj || {}), ...Object.keys(newObj || {})])];
-      
+
       allKeys.forEach(key => {
         const oldValue = oldObj ? oldObj[key] : null;
         const newValue = newObj ? newObj[key] : null;
-        
+
         if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
           changes.push({
             field: key,
@@ -304,7 +260,7 @@ export default function ChildHistory() {
     } catch (error) {
       console.error("Erreur lors de l'analyse des changements:", error);
     }
-    
+
     return changes;
   };
 
@@ -313,84 +269,13 @@ export default function ChildHistory() {
     setCurrentPage(page);
   };
 
-  // Fonction pour imprimer le rapport
-  const handlePrint = useReactToPrint({
-    documentTitle: "Carnet de santé",
-    // @ts-ignore - La propriété content existe bien dans react-to-print mais TypeScript ne la reconnaît pas correctement
-    content: () => printRef.current,
-    onBeforeGetContent: async () => Promise.resolve(),
-    onAfterPrint: () => setShowPrintPreview(false),
-    removeAfterPrint: true
-  });
-
-  // Fonction pour charger les données de l'enfant
-  const fetchChildData = async (childId: number) => {
-    setPrintLoading(true);
-    try {
-      // Récupérer les données de l'enfant
-      const childResponse = await ApiService.get(`/api/enfants/${childId}`);
-      setSelectedChildData(childResponse.data);
-      
-      // Récupérer les vaccinations de l'enfant
-      const vaccinationsResponse = await ApiService.get(`/api/vaccinations/child?enfant_id=${childId}`);
-      setChildVaccines(vaccinationsResponse.data);
-      
-      // Pour chaque vaccin, récupérer ses rappels
-      const rappelsMap: {[key: string]: Rappel[]} = {};
-      const administeredMap: {[key: string]: boolean[]} = {};
-      
-      for (const vaccine of vaccinationsResponse.data) {
-        try {
-          const rappelsResponse = await ApiService.get(`/api/vaccins/${vaccine.vaccin_id}/rappels`);
-          rappelsMap[vaccine.id] = rappelsResponse.data;
-          
-          // Initialiser les rappels administrés
-          administeredMap[vaccine.id] = Array(rappelsResponse.data.length).fill(false);
-          
-          // Vérifier pour chaque rappel s'il a été administré
-          for (let i = 0; i < rappelsResponse.data.length; i++) {
-            try {
-              const checkResponse = await ApiService.get(
-                `/api/vaccinations/check-rappel?enfant_id=${childId}&vaccin_id=${vaccine.vaccin_id}&rappel_id=${i}`
-              );
-              if (checkResponse.data) {
-                administeredMap[vaccine.id][i] = checkResponse.data.administered;
-              }
-            } catch (err) {
-              console.error(`Erreur lors de la vérification du rappel:`, err);
-            }
-          }
-        } catch (err) {
-          console.error(`Erreur lors du chargement des rappels:`, err);
-        }
-      }
-      
-      setVaccineRappels(rappelsMap);
-      setAdministeredRappels(administeredMap);
-      setShowPrintPreview(true);
-      
-    } catch (error) {
-      console.error("Erreur lors de la récupération des données:", error);
-      addNotification({
-        id: Date.now(),
-        title: "Erreur",
-        message: "Impossible de récupérer les informations de l'enfant.",
-        type: "error",
-        category: "system",
-        isRead: false,
-        createdAt: new Date().toISOString()
-      });
-    } finally {
-      setPrintLoading(false);
-    }
-  };
 
   return (
     <div className="p-4">
       <div>
         <CardHeader className="flex justify-between items-center">
-           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-gray-800 flex items-center gap-2">
-                Historique des modifications
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-gray-800 flex items-center gap-2">
+            Historique des modifications
           </h1>
           <div className="w-full border-t border-gray-200 my-6"></div>
           {error && (
@@ -435,7 +320,7 @@ export default function ChildHistory() {
                   <TableBody>
                     {currentItems.map((history) => {
                       const childName = `${history.Nom || ""} ${history.Prenom || ""}`.trim() || "Inconnu";
-                       
+
                       return (
                         <TableRow key={history.id}>
                           <TableCell className="font-medium">
@@ -594,15 +479,15 @@ export default function ChildHistory() {
                               {change.oldValue === null
                                 ? "Non défini"
                                 : typeof change.oldValue === "object"
-                                ? JSON.stringify(change.oldValue)
-                                : String(change.oldValue)}
+                                  ? JSON.stringify(change.oldValue)
+                                  : String(change.oldValue)}
                             </TableCell>
                             <TableCell>
                               {change.newValue === null
                                 ? "Non défini"
                                 : typeof change.newValue === "object"
-                                ? JSON.stringify(change.newValue)
-                                : String(change.newValue)}
+                                  ? JSON.stringify(change.newValue)
+                                  : String(change.newValue)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -635,49 +520,6 @@ export default function ChildHistory() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal pour l'aperçu d'impression */}
-      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 py-4">
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Printer className="h-5 w-5" />
-              Aperçu d'impression
-            </DialogTitle>
-          </DialogHeader>
-          
-          <ScrollArea className="max-h-[70vh] overflow-auto border-t border-b border-gray-200">
-            {printLoading ? (
-              <div className="flex flex-col items-center justify-center p-8">
-                <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
-                <p className="mt-2 text-gray-600">Chargement des données...</p>
-              </div>
-            ) : (
-              selectedChildData && (
-                <ChildPrintView 
-                  enfant={selectedChildData}
-                  vaccines={childVaccines}
-                  vaccineRappels={vaccineRappels}
-                  administeredRappels={administeredRappels}
-                  printRef={printRef}
-                />
-              )
-            )}
-          </ScrollArea>
-          
-          <div className="flex justify-end gap-2 p-4">
-            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
-              Fermer
-            </Button>
-            <Button 
-              onClick={handlePrint} 
-              disabled={printLoading || !selectedChildData}
-              className="bg-blue-500 text-white hover:bg-blue-600"
-            >
-              <Printer className="h-4 w-4 mr-1" /> Imprimer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

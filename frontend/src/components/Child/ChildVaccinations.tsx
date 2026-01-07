@@ -62,9 +62,9 @@ import {
 function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [upcomingVaccineRappels, setUpcomingVaccineRappels] = useState<{[key: string]: Rappel[]}>({});  // Utilisé pour stocker les rappels des vaccins à venir
+  const [upcomingVaccineRappels, setUpcomingVaccineRappels] = useState<{ [key: string]: Rappel[] }>({});  // Utilisé pour stocker les rappels des vaccins à venir
   const [selectedVaccine, setSelectedVaccine] = useState<string>("");
-  const [vaccineStockInfo, setVaccineStockInfo] = useState<{[key: string]: {stock: number, expired: boolean}}>({});
+  const [vaccineStockInfo, setVaccineStockInfo] = useState<{ [key: string]: { stock: number, expired: boolean } }>({});
   const [availableVaccines, setAvailableVaccines] = useState<any[]>([]);
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [overdueVaccines, setOverdueVaccines] = useState<OverdueVaccine[]>([]);
@@ -74,22 +74,20 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showCombobox, setShowCombobox] = useState(false);
   const [activeTab, setActiveTab] = useState<"administered" | "overdue" | "upcoming">("administered");
-  const [prerequisiteWarning, setPrerequisiteWarning] = useState<{message: string, missingPrerequisites: any[], canBeAdministered: boolean} | undefined>(undefined);
+  const [prerequisiteWarning, setPrerequisiteWarning] = useState<{ message: string, missingPrerequisites: any[], canBeAdministered: boolean } | undefined>(undefined);
   // État pour stocker les rappels de chaque vaccin
-  const [vaccineRappels, setVaccineRappels] = useState<{[key: string]: Rappel[]}>({});
+  const [vaccineRappels, setVaccineRappels] = useState<{ [key: string]: Rappel[] }>({});
   // État pour stocker les rappels administrés
-  const [administeredRappels, setAdministeredRappels] = useState<{[key: string]: boolean[]}>({});
+  const [administeredRappels, setAdministeredRappels] = useState<{ [key: string]: boolean[] }>({});
   // État pour stocker le nombre de rappels faits par vaccin
-  const [vaccineAdministeredRappelsCount, setVaccineAdministeredRappelsCount] = useState<{[key: string]: number}>({});
-  // État pour stocker le nombre total d'administrations par vaccin
-  const [vaccineTotalAdministrations, setVaccineTotalAdministrations] = useState<{[key: string]: number}>({});
+  const [vaccineAdministeredRappelsCount, setVaccineAdministeredRappelsCount] = useState<{ [key: string]: number }>({});
   // État pour suivre les vaccins dont tous les rappels ont été administrés
   const [fullyAdministeredVaccines, setFullyAdministeredVaccines] = useState<Record<string, boolean>>({});
 
   // Fonction pour regrouper les vaccins par leur vaccin_id
   const groupVaccinesByType = (vaccines: Vaccine[]) => {
     const groupedVaccines: { [key: string]: { vaccine: Vaccine; count: number } } = {};
-    
+
     vaccines.forEach(vaccine => {
       if (!groupedVaccines[vaccine.vaccin_id]) {
         groupedVaccines[vaccine.vaccin_id] = {
@@ -100,7 +98,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         groupedVaccines[vaccine.vaccin_id].count += 1;
       }
     });
-    
+
     return Object.values(groupedVaccines);
   };
 
@@ -108,12 +106,12 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const hasAnyRappelBeenAdministered = (vaccinId: string): boolean => {
     // Trouver le vaccin dans la liste des vaccins administrés
     const administeredVaccine = vaccines.find(v => v.vaccin_id === vaccinId);
-    
+
     if (administeredVaccine && administeredRappels[administeredVaccine.id]) {
       // Vérifier si au moins un rappel a été administré pour ce vaccin
       return administeredRappels[administeredVaccine.id].some(isAdministered => isAdministered === true);
     }
-    
+
     return false;
   };
 
@@ -123,45 +121,45 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
     const filteredVaccines: UpcomingVaccine[] = upcomingVaccines.filter((vaccine: UpcomingVaccine) => {
       // Vérifier si ce vaccin a déjà été administré
       const isVaccineAdministered = vaccines.some(v => v.vaccin_id === vaccine.vaccin_id);
-      
+
       // Si ce vaccin a déjà été administré, ne pas l'afficher dans les vaccins à suivre
       if (isVaccineAdministered) {
         return false;
       }
-      
+
       // Si c'est un rappel, vérifier s'il a déjà été administré
       if (vaccine.type === 'rappel' && vaccine.parent_vaccine_name) {
         // Trouver le vaccin parent
         const parentVaccine = vaccines.find(v => v.name === vaccine.parent_vaccine_name);
-        
+
         if (parentVaccine) {
           // Vérifier si un rappel a déjà été administré pour ce vaccin
           // Si oui, ne pas afficher d'autres rappels pour ce vaccin
           if (hasAnyRappelBeenAdministered(parentVaccine.vaccin_id)) {
             return false;
           }
-          
+
           // Vérifier si ce rappel spécifique a déjà été administré
           const rappelIndex = vaccineRappels[parentVaccine.id]?.findIndex(
             r => r.vaccin_id === vaccine.vaccin_id || r.delai === vaccine.delai
           );
-          
+
           if (rappelIndex !== -1 && rappelIndex !== undefined) {
             // Vérifier si ce rappel a été administré
             if (administeredRappels[parentVaccine.id]?.[rappelIndex]) {
               return false; // Ce rappel a déjà été administré, ne pas l'afficher
             }
-            
+
             // Si ce rappel n'a pas été administré, l'afficher
             return true;
           }
         }
       }
-      
+
       // Si ce n'est pas un rappel et qu'il n'a pas été administré, l'afficher
       return true;
     });
-    
+
     setFilteredUpcomingVaccines(filteredVaccines);
   }, [upcomingVaccines, vaccines, vaccineRappels, administeredRappels]);
 
@@ -175,11 +173,11 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         }
         const data = await response.json();
         setAvailableVaccines(data);
-        
+
         // Récupérer les informations de stock et de péremption pour chaque vaccin
-        const stockInfo: {[key: string]: {stock: number, expired: boolean}} = {};
+        const stockInfo: { [key: string]: { stock: number, expired: boolean } } = {};
         const today = new Date();
-        
+
         data.forEach((vaccine: any) => {
           const peremptionDate = vaccine.Date_peremption ? new Date(vaccine.Date_peremption) : null;
           stockInfo[vaccine.id] = {
@@ -187,7 +185,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             expired: peremptionDate ? peremptionDate < today : false
           };
         });
-        
+
         setVaccineStockInfo(stockInfo);
       } catch (error) {
         console.error("Error fetching available vaccines:", error);
@@ -211,7 +209,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         }
         const data = await response.json();
         setVaccines(data); // Les données incluent maintenant le champ "name"
-        
+
         // Pour chaque vaccin, récupérer ses rappels
         const rappelsPromises = data.map(async (vaccine: Vaccine) => {
           try {
@@ -226,27 +224,27 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             return { vaccineId: vaccine.id, rappels: [] };
           }
         });
-        
+
         // Attendre que toutes les requêtes de rappels soient terminées
         const rappelsResults = await Promise.all(rappelsPromises);
-        
+
         // Construire un objet avec les rappels indexés par l'ID du vaccin
         const rappelsMap = rappelsResults.reduce((acc, { vaccineId, rappels }) => {
           acc[vaccineId] = rappels;
           return acc;
         }, {});
-        
+
         setVaccineRappels(rappelsMap);
-        
+
         // Vérifier les rappels administrés avec la nouvelle logique basée sur le comptage
         // Implémentation corrigée pour assurer la mise à jour correcte des rappels administrés
         const checkAdministeredRappels = async () => {
           console.log("===== Début de la vérification des rappels administrés =====");
-          
+
           // Créer une copie profonde de la carte des rappels pour éviter les références
           const rappelsMapCopy = JSON.parse(JSON.stringify(rappelsMap));
-          const administeredMap: {[key: string]: boolean[]} = {};
-          
+          const administeredMap: { [key: string]: boolean[] } = {};
+
           // CORRECTION: On efface d'abord tous les états "administered" existants
           // pour éviter les problèmes de données persistantes incorrectes
           for (const vaccine of data) {
@@ -256,46 +254,46 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               });
             }
           }
-          
+
           for (const vaccine of data) {
             if (rappelsMapCopy[vaccine.id] && rappelsMapCopy[vaccine.id].length > 0) {
               const rappelsCount = rappelsMapCopy[vaccine.id].length;
-              
+
               // Initialiser les tableaux de statut des rappels
               administeredMap[vaccine.vaccin_id] = new Array(rappelsCount).fill(false);
               administeredMap[vaccine.id] = new Array(rappelsCount).fill(false);
-              
+
               console.log(`Vérification des rappels pour le vaccin ${vaccine.name || vaccine.Nom} (vaccin_id: ${vaccine.vaccin_id}, id: ${vaccine.id})`);
-              
+
               try {
                 // CORRECTION: Utiliser une requête avec await fetch
                 const rappelCheckResponse = await fetch(
                   buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}`)
                 );
-                
+
                 if (rappelCheckResponse.ok) {
                   const checkResult = await rappelCheckResponse.json();
                   const totalAdministrations = checkResult.totalAdministrations || 0;
                   const rappelsAdministered = checkResult.rappelsAdministered || 0;
-                  
+
                   console.log(`***** DIAGNOSTIC: Vaccin ${vaccine.name || vaccine.Nom}: ${totalAdministrations} administrations totales, ${rappelsAdministered} rappels administrés *****`);
-                  
+
                   // LOGIQUE CORRIGÉE selon la demande utilisateur:
                   // Si N administrations au total (incluant la dose initiale), alors seuls les N-1 premiers rappels sont administrés
                   for (let i = 0; i < rappelsCount; i++) {
                     // Règle corrigée: L'index du rappel doit être STRICTEMENT inférieur au nombre de rappels administrés
                     // Exemple: 2 administrations total (1 dose + 1 rappel) => seul le rappel d'index 0 est administré
                     const isAdministered = i < rappelsAdministered;
-                    
+
                     // Définir explicitement la valeur
                     administeredMap[vaccine.vaccin_id][i] = isAdministered;
                     administeredMap[vaccine.id][i] = isAdministered;
-                    
+
                     // Stocker directement dans la copie
                     if (rappelsMapCopy[vaccine.id][i]) {
                       rappelsMapCopy[vaccine.id][i].administered = isAdministered;
                     }
-                    
+
                     const rappelDelay = rappelsMapCopy[vaccine.id][i]?.delai || 'inconnu';
                     console.log(`Vaccin ${vaccine.name || vaccine.Nom} (${totalAdministrations} administrations): Rappel J+${rappelDelay} (index ${i}) => ${isAdministered ? 'ADMINISTRÉ' : 'NON ADMINISTRÉ'}`);
                   }
@@ -307,49 +305,48 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               }
             }
           }
-          
+
           // Calculer le nombre de rappels faits pour chaque vaccin
-          const rappelsCountMap: {[key: string]: number} = {};
-          const totalAdministrationsMap: {[key: string]: number} = {};
-          
+          const rappelsCountMap: { [key: string]: number } = {};
+          const totalAdministrationsMap: { [key: string]: number } = {};
+
           // Pour chaque vaccin, compter les rappels réellement administrés
           for (const vaccine of data) {
             const vaccineId = vaccine.id;
             const vaccineVaccinId = vaccine.vaccin_id;
-            
+
             // Compter les rappels administrés pour ce vaccin
             let rappelsCount = 0;
             if (administeredMap[vaccineId]) {
               rappelsCount = administeredMap[vaccineId].filter(Boolean).length;
             }
-            
+
             // Stocker les compteurs par les deux clés pour assurer la compatibilité
             rappelsCountMap[vaccineId] = rappelsCount;
             rappelsCountMap[vaccineVaccinId] = rappelsCount;
-            
+
             // Stocker le nombre total d'administrations (rappels administrés + 1 pour la dose initiale)
             totalAdministrationsMap[vaccineId] = rappelsCount + 1;
             totalAdministrationsMap[vaccineVaccinId] = rappelsCount + 1;
-            
+
             console.log(`Vaccin ${vaccine.name || vaccine.Nom}: ${rappelsCount} rappels faits, ${rappelsCount + 1} doses au total`);
           }
-          
+
           // CORRECTION: Mettre à jour complètement les états avec des nouvelles références
           console.log('===== Mise à jour des states avec les données calculées =====');
           console.log('Nouvelle carte des rappels administrés:', administeredMap);
           console.log('Rappels avec la propriété administered mise à jour:', rappelsMapCopy);
           console.log('Nombre de rappels faits par vaccin:', rappelsCountMap);
           console.log('Nombre total d\'administrations par vaccin:', totalAdministrationsMap);
-          
+
           // Mise à jour atomique des états pour éviter les problèmes de rendu
-          setAdministeredRappels({...administeredMap});
-          setVaccineRappels({...rappelsMapCopy});
-          setVaccineAdministeredRappelsCount({...rappelsCountMap});
-          setVaccineTotalAdministrations({...totalAdministrationsMap});
-          
+          setAdministeredRappels({ ...administeredMap });
+          setVaccineRappels({ ...rappelsMapCopy });
+          setVaccineAdministeredRappelsCount({ ...rappelsCountMap });
+
           console.log("===== Fin de la vérification des rappels administrés =====");
         };
-        
+
         checkAdministeredRappels();
       } catch (error) {
         setError("Erreur lors du chargement des vaccinations");
@@ -386,14 +383,14 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       try {
         const response = await fetch(
           buildApiUrl(`/api/vaccinations/upcoming?enfant_id=${enfantId}`), {
-          cache: "no-store" 
+          cache: "no-store"
         });
         if (!response.ok) {
           throw new Error("Erreur lors de la requête au serveur");
         }
         const data = await response.json();
         setUpcomingVaccines(data);
-        
+
         // Pour chaque vaccin à suivre, récupérer ses rappels
         const rappelsPromises = data.map(async (vaccine: UpcomingVaccine) => {
           try {
@@ -408,23 +405,23 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             return { vaccineId: vaccine.id, rappels: [] };
           }
         });
-        
+
         // Attendre que toutes les requêtes de rappels soient terminées
         const rappelsResults = await Promise.all(rappelsPromises);
-        
+
         // Construire un objet avec les rappels indexés par l'ID du vaccin
         const rappelsMap = rappelsResults.reduce((acc, { vaccineId, rappels }) => {
           acc[vaccineId] = rappels;
           return acc;
         }, {});
-        
+
         setUpcomingVaccineRappels(rappelsMap);
       } catch (error) {
         setError("Erreur lors du chargement des vaccins à suivre");
         console.error("Error fetching upcoming vaccines:", error);
       } finally {
         setIsLoading(false);
-      }  
+      }
     };
 
     // Toujours charger la liste des vaccins disponibles, indépendamment de l'enfant sélectionné
@@ -440,17 +437,17 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   // Vérifier si un vaccin peut être administré (prérequis satisfaits)
   const checkVaccinePrerequisites = async (vaccinId: string) => {
     if (!vaccinId || !enfantId) return;
-    
+
     try {
       const response = await fetch(
         buildApiUrl(`/api/vaccinations/check-prerequisites?vaccin_id=${vaccinId}&enfant_id=${enfantId}`), {
-          cache: "no-store" 
-        });
-      
+        cache: "no-store"
+      });
+
       if (!response.ok) {
         throw new Error("Erreur lors de la vérification des prérequis");
       }
-      
+
       const data = await response.json();
       setPrerequisiteWarning(data);
       return data;
@@ -460,30 +457,30 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       return null;
     }
   };
-  
+
   // Quand l'utilisateur sélectionne un vaccin dans la liste déroulante
   // Vérifier si tous les rappels d'un vaccin ont été administrés
   const checkAllRappelsAdministered = async (vaccinId: string) => {
     try {
       const response = await fetch(
         buildApiUrl(`/api/vaccinations/check-all-rappels-administered?enfant_id=${enfantId}&vaccin_id=${vaccinId}`), {
-          cache: "no-store" 
-        });
-      
+        cache: "no-store"
+      });
+
       if (!response.ok) {
         console.error("Erreur lors de la vérification des rappels administrés:", response.status);
         return { allAdministered: false };
       }
-      
+
       const data = await response.json();
       console.log("checkAllRappelsAdministered résultat:", data);
-      
+
       // Mettre à jour l'état des vaccins complètement administrés
       setFullyAdministeredVaccines(prev => ({
         ...prev,
         [vaccinId]: data.allAdministered
       }));
-      
+
       return data;
     } catch (error) {
       console.error("Erreur lors de la vérification des rappels administrés:", error);
@@ -492,13 +489,13 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   };
 
   // État pour stocker les informations sur le nombre maximal d'administrations
-  const [maxRappelsInfo, setMaxRappelsInfo] = useState<{[key: string]: {maxReached: boolean, currentCount: number, maxAllowed: number}}>({});
+  const [maxRappelsInfo, setMaxRappelsInfo] = useState<{ [key: string]: { maxReached: boolean, currentCount: number, maxAllowed: number } }>({});
 
   const handleVaccineSelection = async (vaccinId: string) => {
     setSelectedVaccine(vaccinId);
     await checkVaccinePrerequisites(vaccinId);
     await checkAllRappelsAdministered(vaccinId);
-    
+
     // Vérifier si le nombre maximal d'administrations est atteint
     const maxRappelsCheck = await checkMaxRappelsReached(vaccinId);
     setMaxRappelsInfo(prev => ({
@@ -506,20 +503,20 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       [vaccinId]: maxRappelsCheck
     }));
   };
-  
+
   // Vérifier si un vaccin est un rappel d'un vaccin existant
   const checkIfVaccineIsRappel = async (vaccinId: string) => {
     try {
       // Vérifier si le vaccin est un rappel d'un vaccin existant
       const response = await fetch(
         buildApiUrl(`/api/vaccinations/check-rappel-status?enfant_id=${enfantId}&vaccin_id=${vaccinId}`), {
-          cache: "no-store" 
-        });
-      
+        cache: "no-store"
+      });
+
       if (!response.ok) {
         return { isRappel: false, parentVaccineId: null };
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -533,21 +530,21 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
     try {
       // Afficher un indicateur de chargement
       setIsLoading(true);
-      
+
       // Récupérer d'abord les informations du vaccin de rappel pour vérifier le stock
       const vaccineInfoResponse = await fetch(buildApiUrl(`/api/vaccins/${rappelVaccinId}`));
-      
+
       if (!vaccineInfoResponse.ok) {
         throw new Error("Erreur lors de la récupération des informations du vaccin de rappel");
       }
-      
+
       const vaccineInfo = await vaccineInfoResponse.json();
-      
+
       // Vérifier si le stock est suffisant
       if (vaccineInfo.Stock <= 0) {
         throw new Error("Stock insuffisant pour ce vaccin de rappel");
       }
-      
+
       // Appel API pour marquer le rappel comme administré
       const response = await fetch(buildApiUrl(`/api/vaccinations/mark-rappel-administered`), {
         method: "POST",
@@ -559,7 +556,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
           date_administration: new Date().toISOString().split("T")[0],
         }),
       });
-      
+
       // Si l'administration a réussi, diminuer le stock
       if (response.ok) {
         // Mettre à jour le stock du vaccin
@@ -570,7 +567,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             newStock: vaccineInfo.Stock - 1
           }),
         });
-        
+
         if (!updateStockResponse.ok) {
           console.error("Erreur lors de la mise à jour du stock du vaccin de rappel");
         }
@@ -579,16 +576,16 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       if (!response.ok) {
         throw new Error("Erreur lors de la mise à jour du rappel");
       }
-      
+
       // Mettre à jour les rappels administrés
       const updatedAdministeredRappels = { ...administeredRappels };
-      
+
       // Trouver l'index du rappel dans le tableau des rappels pour ce vaccin
       if (vaccineRappels[parentVaccineId]) {
         const rappelIndex = vaccineRappels[parentVaccineId].findIndex(
           r => r.vaccin_id === rappelVaccinId || r.id === rappelVaccinId
         );
-        
+
         if (rappelIndex !== -1) {
           if (!updatedAdministeredRappels[parentVaccineId]) {
             updatedAdministeredRappels[parentVaccineId] = new Array(vaccineRappels[parentVaccineId].length).fill(false);
@@ -600,7 +597,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
 
       // Rafraîchir les données après la mise à jour du rappel
       await refreshData();
-      
+
       // Afficher un message de succès
       setSuccessMessage("Rappel administré avec succès");
       setTimeout(() => setSuccessMessage(null), 3000); // Effacer le message après 3 secondes
@@ -623,7 +620,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       }
       const rappelsData = await rappelsResponse.json();
       const maxRappels = rappelsData.length;
-      
+
       // Récupérer le nombre de fois que ce vaccin a été administré à l'enfant
       const administeredResponse = await fetch(
         buildApiUrl(`/api/vaccinations/count?enfant_id=${enfantId}&vaccin_id=${vaccinId}`)
@@ -632,7 +629,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         throw new Error("Erreur lors de la récupération du nombre d'administrations");
       }
       const { count } = await administeredResponse.json();
-      
+
       // Si le nombre d'administrations est supérieur au nombre de rappels + 1 (dose initiale)
       // alors le nombre maximum de rappels a été atteint
       return {
@@ -654,8 +651,8 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         try {
           const overdueResponse = await fetch(
             buildApiUrl(`/api/vaccinations/overdue?enfant_id=${enfantId}`), {
-          cache: "no-store" 
-        });
+            cache: "no-store"
+          });
           if (overdueResponse.ok) {
             const overdueData = await overdueResponse.json();
             setOverdueVaccines(overdueData);
@@ -664,28 +661,28 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
           console.error("Error refreshing overdue vaccines:", err);
         }
       };
-      
+
       // Rafraîchir la liste des vaccins à suivre
       const fetchUpdatedUpcomingVaccines = async () => {
         try {
           const upcomingResponse = await fetch(
             buildApiUrl(`/api/vaccinations/upcoming?enfant_id=${enfantId}`), {
-          cache: "no-store" 
-        });
+            cache: "no-store"
+          });
           if (upcomingResponse.ok) {
             const upcomingData = await upcomingResponse.json();
             setUpcomingVaccines(upcomingData);
-            
+
             // Rafraîchir également les rappels pour les vaccins à suivre
             const updatedRappels: Record<string, Rappel[]> = {};
-            
+
             for (const vaccine of upcomingData) {
               try {
                 const rappelsResponse = await fetch(
                   buildApiUrl(`/api/vaccins/${vaccine.vaccin_id}/rappels`), {
-          cache: "no-store" 
-        });
-                
+                  cache: "no-store"
+                });
+
                 if (rappelsResponse.ok) {
                   const rappelsData = await rappelsResponse.json();
                   updatedRappels[vaccine.id] = rappelsData;
@@ -694,25 +691,25 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 console.error(`Error fetching rappels for vaccine ${vaccine.id}:`, err);
               }
             }
-            
+
             setUpcomingVaccineRappels(updatedRappels);
           }
         } catch (err) {
           console.error("Error refreshing upcoming vaccines:", err);
         }
       };
-      
+
       // Rafraîchir les vaccins administrés et leurs rappels
       const fetchUpdatedAdministeredVaccines = async () => {
         try {
           const response = await fetch(
             buildApiUrl(`/api/vaccinations/child?enfant_id=${enfantId}`), {
-          cache: "no-store" 
-        });
+            cache: "no-store"
+          });
           if (response.ok) {
             const data = await response.json();
             setVaccines(data);
-            
+
             // Pour chaque vaccin, récupérer ses rappels
             const rappelsPromises = data.map(async (vaccine: Vaccine) => {
               try {
@@ -727,38 +724,38 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 return { vaccineId: vaccine.id, rappels: [] };
               }
             });
-            
+
             // Attendre que toutes les requêtes de rappels soient terminées
             const rappelsResults = await Promise.all(rappelsPromises);
-            
+
             // Construire un objet avec les rappels indexés par l'ID du vaccin
             const rappelsMap = rappelsResults.reduce((acc, { vaccineId, rappels }) => {
               acc[vaccineId] = rappels;
               return acc;
             }, {});
-            
+
             setVaccineRappels(rappelsMap);
-            
+
             // Vérifier les rappels administrés
-            const administeredMap: {[key: string]: boolean[]} = {};
-            
+            const administeredMap: { [key: string]: boolean[] } = {};
+
             for (const vaccine of data) {
               if (rappelsMap[vaccine.id] && rappelsMap[vaccine.id].length > 0) {
                 // Initialiser le tableau de statut des rappels pour ce vaccin
                 administeredMap[vaccine.id] = new Array(rappelsMap[vaccine.id].length).fill(false);
-                
+
                 // Pour chaque rappel, vérifier s'il a été administré
                 for (let i = 0; i < rappelsMap[vaccine.id].length; i++) {
                   const rappel = rappelsMap[vaccine.id][i];
                   const rappelDate = new Date(vaccine.date_vaccination);
                   rappelDate.setDate(rappelDate.getDate() + rappel.delai);
-                  
+
                   // Vérifier si ce rappel a été administré
                   try {
                     const rappelCheckResponse = await fetch(
                       buildApiUrl(`/api/vaccinations/check-rappel?enfant_id=${enfantId}&vaccin_id=${vaccine.vaccin_id}&date_rappel=${rappelDate.toISOString().split('T')[0]}`)
                     );
-                    
+
                     if (rappelCheckResponse.ok) {
                       const checkResult = await rappelCheckResponse.json();
                       administeredMap[vaccine.id][i] = checkResult.administered;
@@ -769,25 +766,25 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 }
               }
             }
-            
+
             setAdministeredRappels(administeredMap);
           }
         } catch (err) {
           console.error("Error refreshing administered vaccines:", err);
         }
       };
-      
+
       // Exécuter les rafraîchissements
       await Promise.all([
-        fetchUpdatedOverdueVaccines(), 
+        fetchUpdatedOverdueVaccines(),
         fetchUpdatedUpcomingVaccines(),
         fetchUpdatedAdministeredVaccines()
       ]);
-      
+
       // Réinitialiser l'interface utilisateur
       setSelectedVaccine("");
       setShowCombobox(false);
-      
+
       // Ajouter un petit délai pour s'assurer que les données sont bien mises à jour
       setTimeout(() => {
         // Forcer la mise à jour des filtres
@@ -806,26 +803,26 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       console.error("Vaccine or enfantId missing");
       return;
     }
-    
+
     // Vérifier si le vaccin est périmé ou en rupture de stock
     const stockInfo = vaccineStockInfo[selectedVaccine] || { stock: 0, expired: false };
-    
+
     if (stockInfo.expired) {
       setError("Ce vaccin est périmé et ne peut pas être administré.");
       setTimeout(() => setError(null), 5000);
       return;
     }
-    
+
     if (stockInfo.stock <= 0) {
       setError("Le stock de ce vaccin est épuisé. Impossible de l'administrer.");
       setTimeout(() => setError(null), 5000);
       return;
     }
-    
+
     try {
       // Vérifier les prérequis avant d'ajouter le vaccin
       const prerequisiteCheck = await checkVaccinePrerequisites(selectedVaccine);
-      
+
       // Si le vaccin ne peut pas être administré (prérequis stricts manquants)
       if (prerequisiteCheck && !prerequisiteCheck.canBeAdministered) {
         return; // Arrêter l'ajout du vaccin
@@ -845,21 +842,21 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             rappel_vaccin_id: selectedVaccine,
             date_administration: new Date().toISOString().split("T")[0],
           });
-          
+
           // Récupérer d'abord les informations du vaccin de rappel pour vérifier le stock
           const vaccineInfoResponse = await fetch(buildApiUrl(`/api/vaccins/${selectedVaccine}`));
-          
+
           if (!vaccineInfoResponse.ok) {
             throw new Error("Erreur lors de la récupération des informations du vaccin de rappel");
           }
-          
+
           const vaccineInfo = await vaccineInfoResponse.json();
-          
+
           // Vérifier si le stock est suffisant
           if (vaccineInfo.Stock <= 0) {
             throw new Error("Stock insuffisant pour ce vaccin de rappel");
           }
-          
+
           const response = await fetch(buildApiUrl(`/api/vaccinations/mark-rappel-administered`), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -870,7 +867,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               date_administration: new Date().toISOString().split("T")[0],
             }),
           });
-          
+
           // Si l'administration a réussi, diminuer le stock
           if (response.ok) {
             // Mettre à jour le stock du vaccin
@@ -881,7 +878,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 newStock: vaccineInfo.Stock - 1
               }),
             });
-            
+
             if (!updateStockResponse.ok) {
               console.error("Erreur lors de la mise à jour du stock du vaccin de rappel");
             }
@@ -892,20 +889,20 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             console.error("Erreur lors de la mise à jour du rappel:", response.status, errorData);
             throw new Error(`Erreur lors de la mise à jour du rappel: ${errorData.message || response.statusText}`);
           }
-          
+
           // Réinitialiser l'avertissement des prérequis
           setPrerequisiteWarning(undefined);
 
           // Mettre à jour les rappels administrés
           const updatedAdministeredRappels = { ...administeredRappels };
-          
+
           // Trouver l'index du rappel dans le tableau des rappels pour ce vaccin
           const parentVaccine = vaccines.find(v => v.id === rappelCheck.parentVaccineId);
           if (parentVaccine && vaccineRappels[parentVaccine.id]) {
             const rappelIndex = vaccineRappels[parentVaccine.id].findIndex(
               r => r.vaccin_id === selectedVaccine || r.id === selectedVaccine
             );
-            
+
             if (rappelIndex !== -1) {
               if (!updatedAdministeredRappels[parentVaccine.id]) {
                 updatedAdministeredRappels[parentVaccine.id] = new Array(vaccineRappels[parentVaccine.id].length).fill(false);
@@ -917,7 +914,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
 
           // Rafraîchir les données après la mise à jour du rappel
           await refreshData();
-          
+
           // Vérifier si tous les rappels ont été administrés pour ce vaccin
           if (rappelCheck.parentVaccineId) {
             await checkAllRappelsAdministered(rappelCheck.parentVaccineId);
@@ -932,28 +929,28 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         try {
           // Vérifier si le nombre maximum d'administrations a été atteint
           const maxRappelsCheck = await checkMaxRappelsReached(selectedVaccine);
-          
+
           if (maxRappelsCheck.maxReached) {
             // Afficher un message d'erreur si le nombre maximum d'administrations a été atteint
             setError(`Ce vaccin a déjà été administré ${maxRappelsCheck.currentCount} fois sur ${maxRappelsCheck.maxAllowed} autorisées (dose initiale + rappels).`);
             setTimeout(() => setError(null), 5000); // Effacer le message après 5 secondes
             return;
           }
-          
+
           // Récupérer d'abord les informations du vaccin pour vérifier le stock
           const vaccineInfoResponse = await fetch(buildApiUrl(`/api/vaccins/${selectedVaccine}`));
-          
+
           if (!vaccineInfoResponse.ok) {
             throw new Error("Erreur lors de la récupération des informations du vaccin");
           }
-          
+
           const vaccineInfo = await vaccineInfoResponse.json();
-          
+
           // Vérifier si le stock est suffisant
           if (vaccineInfo.Stock <= 0) {
             throw new Error("Stock insuffisant pour ce vaccin");
           }
-          
+
           // Administrer le vaccin
           const response = await fetch(buildApiUrl("/api/vaccinations"), {
             method: "POST",
@@ -964,7 +961,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               date_vaccination: new Date().toISOString().split("T")[0],
             }),
           });
-          
+
           // Si l'administration a réussi, diminuer le stock
           if (response.ok) {
             // Mettre à jour le stock du vaccin
@@ -975,7 +972,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 newStock: vaccineInfo.Stock - 1
               }),
             });
-            
+
             if (!updateStockResponse.ok) {
               console.error("Erreur lors de la mise à jour du stock du vaccin");
             }
@@ -984,18 +981,18 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
           if (!response.ok) {
             throw new Error("Erreur lors de l'ajout du vaccin");
           }
-          
+
           // Réinitialiser l'avertissement des prérequis
           setPrerequisiteWarning(undefined);
 
           const newVaccination = await response.json(); // Contient maintenant toutes les données, y compris "name"
-          
+
           // Mettre à jour la liste des vaccins administrés
           setVaccines((prevVaccines) => [...prevVaccines, newVaccination]);
-          
+
           // Rafraîchir les données après l'ajout du vaccin
           await refreshData();
-          
+
           // Vérifier si tous les rappels ont été administrés pour ce vaccin
           await checkAllRappelsAdministered(selectedVaccine);
         } catch (error) {
@@ -1065,7 +1062,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
           </button>
         )}
       </div>
-      
+
       {/* Message de succès */}
       {successMessage && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md border border-green-300 flex items-center">
@@ -1078,11 +1075,10 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
       <div className="flex mb-4 bg-gray-100 space-x-3 p-2 rounded-lg">
         <button
           onClick={() => setActiveTab("administered")}
-          className={`relative py-3 px-6 font-medium text-sm focus:outline-none transition-colors ${
-            activeTab === "administered"
-              ? "bg-green-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
+          className={`relative py-3 px-6 font-medium text-sm focus:outline-none transition-colors ${activeTab === "administered"
+            ? "bg-green-600 text-white"
+            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
         >
           Vaccins administrés
           {vaccines.length > 0 && (
@@ -1093,11 +1089,10 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         </button>
         <button
           onClick={() => setActiveTab("overdue")}
-          className={`relative py-3 px-6 font-medium text-sm focus:outline-none transition-colors ${
-            activeTab === "overdue"
-              ? "bg-red-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
+          className={`relative py-3 px-6 font-medium text-sm focus:outline-none transition-colors ${activeTab === "overdue"
+            ? "bg-red-600 text-white"
+            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
         >
           Vaccins en retard
           {overdueVaccines.length > 0 && (
@@ -1108,11 +1103,10 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
         </button>
         <button
           onClick={() => setActiveTab("upcoming")}
-          className={`relative py-3 px-6 font-medium text-sm focus:outline-none transition-colors ${
-            activeTab === "upcoming"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
+          className={`relative py-3 px-6 font-medium text-sm focus:outline-none transition-colors ${activeTab === "upcoming"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
         >
           Vaccins à suivre
           {filteredUpcomingVaccines.length > 0 && (
@@ -1149,7 +1143,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                           {groupedVaccine.count}x
                         </div>
                       )}
-                      
+
                       <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <ShieldCheckIcon className="h-5 w-5 text-gray-600" />{" "}
                         {groupedVaccine.vaccine.name || groupedVaccine.vaccine.Nom || "Vaccin sans nom"}
@@ -1158,7 +1152,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                         <ClockIcon className="h-4 w-4 text-gray-500" />
                         Dernière date: {new Date(groupedVaccine.vaccine.date_vaccination).toLocaleDateString()}
                       </p>
-                      
+
                       {/* Affichage du nombre de rappels faits */}
                       <div className="mt-2 flex flex-col gap-1">
                         {vaccineAdministeredRappelsCount[groupedVaccine.vaccine.id] !== undefined && (
@@ -1167,9 +1161,9 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                             <span className="ml-1">rappel{vaccineAdministeredRappelsCount[groupedVaccine.vaccine.id] > 1 ? 's' : ''} fait{vaccineAdministeredRappelsCount[groupedVaccine.vaccine.id] > 1 ? 's' : ''}</span>
                           </span>
                         )}
-                       
+
                       </div>
-                      
+
                       {/* Affichage des rappels avec cases à cocher */}
                       {vaccineRappels[groupedVaccine.vaccine.id] && vaccineRappels[groupedVaccine.vaccine.id].length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
@@ -1185,31 +1179,31 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                               rappelDate.setDate(rappelDate.getDate() + rappel.delai);
                               const isRappelDue = new Date() >= rappelDate;
                               const isToday = new Date().toDateString() === rappelDate.toDateString();
-                              
+
                               // LOGIQUE SIMPLIFIÉE CORRIGÉE:
                               // Utiliser UNIQUEMENT la propriété 'administered' définie sur l'objet rappel
                               // Cette propriété est définie dans checkAdministeredRappels selon la règle métier précise
                               const isRappelAdministered = rappel.administered === true;
-                              
+
                               // Log pour le débogage
-                              console.log(`Affichage rappel ${index+1} (J+${rappel.delai}) du vaccin ${groupedVaccine.vaccine.name || groupedVaccine.vaccine.Nom} - administré: ${isRappelAdministered}`, {
+                              console.log(`Affichage rappel ${index + 1} (J+${rappel.delai}) du vaccin ${groupedVaccine.vaccine.name || groupedVaccine.vaccine.Nom} - administré: ${isRappelAdministered}`, {
                                 rappel_id: rappel.id,
                                 vaccin_id: rappel.vaccin_id,
                                 administered: rappel.administered
                               });
-                              
+
                               // Définir les couleurs et styles en fonction de l'état du rappel
                               let bgColor = isRappelAdministered ? 'bg-green-50' : isRappelDue ? 'bg-yellow-50' : isToday ? 'bg-yellow-50' : 'bg-blue-50';
                               let borderColor = isRappelAdministered ? 'border-green-200' : isRappelDue ? 'border-yellow-200' : isToday ? 'border-yellow-200' : 'border-blue-200';
                               let textColor = isRappelAdministered ? 'text-green-800' : isRappelDue ? 'text-yellow-800' : isToday ? 'text-yellow-800' : 'text-blue-800';
                               let iconColor = isRappelAdministered ? 'text-green-600' : isRappelDue ? 'text-yellow-600' : isToday ? 'text-yellow-600' : 'text-blue-600';
-                              
+
                               return (
-                                <div 
-                                  key={`${groupedVaccine.vaccine.id}-rappel-${index}`} 
+                                <div
+                                  key={`${groupedVaccine.vaccine.id}-rappel-${index}`}
                                   className={`flex items-center gap-2 ${bgColor} px-3 py-2 rounded-md border ${borderColor} shadow-sm transition-all hover:shadow-md`}
                                 >
-                                  {index < groupedVaccine.count-1 ? (
+                                  {index < groupedVaccine.count - 1 ? (
                                     <div className="flex items-center gap-1">
                                       <CheckCircleIcon className="h-5 w-5 text-green-600" />
                                       <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Administré</span>
@@ -1221,7 +1215,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                                   ) : (
                                     <ClockOutlineIcon className={`h-5 w-5 ${iconColor}`} />
                                   )}
-                                  
+
                                   <div className="flex flex-col">
                                     <span className={`text-xs font-medium ${textColor}`}>
                                       {rappel.delai === 0 ? 'Immédiat' : `J+${rappel.delai}`}
@@ -1232,7 +1226,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                                       </span>
                                     )}
                                   </div>
-                                  
+
                                   {/* Bouton pour administrer le rappel directement s'il n'est pas encore administré */}
                                   {!isRappelAdministered && rappel.vaccin_id && (
                                     <button
@@ -1249,7 +1243,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                           </div>
                         </div>
                       )}
-                      
+
                       <button
                         onClick={() => handleDeleteVaccine(groupedVaccine.vaccine.id)}
                         className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
@@ -1264,7 +1258,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             )}
           </div>
         )}
-        
+
         {/* Onglet Vaccins en retard */}
         {activeTab === "overdue" && (
           <div>
@@ -1292,21 +1286,21 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                         </h3>
                         <span className="bg-orange-100 text-orange-800 text-xs font-bold px-2.5 py-0.5 rounded-full">En retard</span>
                       </div>
-                      
+
                       <div className="bg-orange-50 px-3 py-2 rounded-md border border-orange-100 my-2">
                         <p className="text-gray-700 flex items-center gap-2">
                           <ClockIcon className="h-4 w-4 text-orange-600" />
-                          <span className="font-medium">Âge recommandé:</span> 
+                          <span className="font-medium">Âge recommandé:</span>
                           <span className="text-orange-700">
                             {vaccine.Age_Annees > 0 ? `${vaccine.Age_Annees} ${vaccine.Age_Annees > 1 ? 'années' : 'année'}` : ''}{vaccine.Age_Annees > 0 && (vaccine.Age_Mois > 0 || vaccine.Age_Jours > 0) ? ' - ' : ''}{vaccine.Age_Mois > 0 ? `${vaccine.Age_Mois} ${vaccine.Age_Mois > 1 ? 'mois' : 'mois'}` : ''}{vaccine.Age_Mois > 0 && vaccine.Age_Jours > 0 ? ' - ' : ''}{vaccine.Age_Jours > 0 ? `${vaccine.Age_Jours} ${vaccine.Age_Jours > 1 ? 'jours' : 'jour'}` : ''}
                           </span>
                         </p>
                       </div>
-                      
+
                       {vaccine.Description && (
                         <p className="text-gray-600 mt-2 text-sm italic bg-gray-50 p-2 rounded">{vaccine.Description}</p>
                       )}
-                      
+
                       <div className="mt-3 flex justify-end">
                         <button
                           onClick={() => setSelectedVaccine(vaccine.id)}
@@ -1323,7 +1317,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             )}
           </div>
         )}
-        
+
         {/* Onglet Vaccins à suivre */}
         {activeTab === "upcoming" && (
           <div>
@@ -1351,18 +1345,18 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                           {vaccine.type === 'rappel' ? 'Rappel' : vaccine.strict ? 'Strict' : 'Recommandé'}
                         </span>
                       </div>
-                      
+
                       <div className="bg-blue-50 px-3 py-2 rounded-md border border-blue-100 my-2">
                         <p className="text-gray-700 flex items-center gap-2">
                           <ClockIcon className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium">Jours restants:</span> 
+                          <span className="font-medium">Jours restants:</span>
                           <span className="text-blue-700">
                             {vaccine.days_remaining}
                           </span>
                         </p>
                         <p className="text-gray-700 flex items-center gap-2 mt-2">
                           <CalendarIcon className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium">Date estimée:</span> 
+                          <span className="font-medium">Date estimée:</span>
                           <span className="text-blue-700">
                             {format(
                               new Date(Date.now() + vaccine.days_remaining * 24 * 60 * 60 * 1000),
@@ -1371,16 +1365,16 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                           </span>
                         </p>
                       </div>
-                      
+
                       <div className="bg-gray-50 px-3 py-2 rounded-md border border-gray-100 my-2">
                         <p className="text-gray-700">
-                          <span className="font-medium">Délai requis:</span> 
+                          <span className="font-medium">Délai requis:</span>
                           <span className="text-gray-700 ml-2">
                             {vaccine.delai} jours
                           </span>
                         </p>
                       </div>
-                      
+
                       {/* Affichage des rappels à venir pour ce vaccin */}
                       {upcomingVaccineRappels[vaccine.id] && upcomingVaccineRappels[vaccine.id].length > 0 && (
                         <div className="mt-3">
@@ -1396,41 +1390,41 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                                 // Vérifier si ce rappel a déjà été administré
                                 // Pour les rappels des vaccins à venir, nous devons vérifier dans les vaccins déjà administrés
                                 const parentVaccine = vaccines.find(v => v.vaccin_id === vaccine.vaccin_id);
-                                
+
                                 if (parentVaccine) {
                                   // Si le vaccin parent existe, vérifier si ce rappel spécifique a été administré
                                   const rappelIndex = vaccineRappels[parentVaccine.id]?.findIndex(
                                     r => r.vaccin_id === rappel.vaccin_id || r.delai === rappel.delai
                                   );
-                                  
+
                                   if (rappelIndex !== -1 && rappelIndex !== undefined) {
                                     // Vérifier si ce rappel a été administré
                                     return !administeredRappels[parentVaccine.id]?.[rappelIndex];
                                   }
                                 }
-                                
+
                                 // Si on ne peut pas déterminer si le rappel a été administré, l'afficher par défaut
                                 return true;
                               })
                               .map((rappel, index) => (
-                              <div 
-                                key={`${vaccine.id}-upcoming-rappel-${index}`}
-                                className="bg-blue-50 px-3 py-1 rounded-md border border-blue-100 flex items-center gap-1 text-xs"
-                              >
-                                <ClockOutlineIcon className="h-3 w-3 text-blue-600" />
-                                <span>
-                                  {rappel.delai === 0 ? 'Immédiat' : `J+${rappel.delai}`}
-                                  {rappel.description && ` - ${rappel.description}`}
-                                </span>
-                              </div>
-                            ))}
+                                <div
+                                  key={`${vaccine.id}-upcoming-rappel-${index}`}
+                                  className="bg-blue-50 px-3 py-1 rounded-md border border-blue-100 flex items-center gap-1 text-xs"
+                                >
+                                  <ClockOutlineIcon className="h-3 w-3 text-blue-600" />
+                                  <span>
+                                    {rappel.delai === 0 ? 'Immédiat' : `J+${rappel.delai}`}
+                                    {rappel.description && ` - ${rappel.description}`}
+                                  </span>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Section des rappels avec type "Rappels" */}
-                      
-                      
+
+
                       {/* Bouton pour programmer le vaccin */}
                       <div className="mt-4 flex justify-end">
                         <button
@@ -1468,14 +1462,14 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                 const stockInfo = vaccineStockInfo[vaccine.id] || { stock: 0, expired: false };
                 const isOutOfStock = stockInfo.stock <= 0;
                 const isExpired = stockInfo.expired;
-                
+
                 return (
                   <option
                     key={`select-${vaccine.id}`}
                     value={vaccine.id}
                     disabled={isOutOfStock || isExpired}
                   >
-                    {vaccine.Nom} 
+                    {vaccine.Nom}
                     {isOutOfStock ? ' - Stock épuisé' : ''}
                     {isExpired ? ' - Périmé' : ''}
                     {!isOutOfStock && !isExpired ? ` - Stock: ${stockInfo.stock}` : ''}
@@ -1484,7 +1478,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               })}
             </select>
           </div>
-          
+
           {/* Affichage des avertissements de stock épuisé ou péremption */}
           {selectedVaccine && vaccineStockInfo[selectedVaccine] && (
             <>
@@ -1496,7 +1490,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                   </p>
                 </div>
               )}
-              
+
               {!vaccineStockInfo[selectedVaccine].expired && vaccineStockInfo[selectedVaccine].stock <= 0 && (
                 <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200">
                   <p className="font-medium mb-2 text-red-700 flex items-center">
@@ -1507,14 +1501,14 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               )}
             </>
           )}
-          
+
           {/* Affichage des avertissements de prérequis */}
           {prerequisiteWarning && selectedVaccine && (
             <div className={`mt-4 p-4 rounded-lg ${prerequisiteWarning.canBeAdministered ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
               <p className={`font-medium mb-2 ${prerequisiteWarning.canBeAdministered ? 'text-yellow-700' : 'text-red-700'}`}>
                 {prerequisiteWarning.message}
               </p>
-              
+
               {prerequisiteWarning.missingPrerequisites && prerequisiteWarning.missingPrerequisites.length > 0 && (
                 <div className="mt-2">
                   <p className="text-gray-700 font-medium mb-1">Prérequis manquants:</p>
@@ -1529,7 +1523,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               )}
             </div>
           )}
-          
+
           {selectedVaccine && (
             <div className="mt-4 flex gap-4">
               <button
@@ -1541,25 +1535,24 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                   Boolean(selectedVaccine && vaccineStockInfo[selectedVaccine]?.expired) ||
                   Boolean(selectedVaccine && vaccineStockInfo[selectedVaccine]?.stock <= 0)
                 }
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-md ${
-                  (prerequisiteWarning && !prerequisiteWarning.canBeAdministered) || 
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-md ${(prerequisiteWarning && !prerequisiteWarning.canBeAdministered) ||
                   (selectedVaccine && fullyAdministeredVaccines[selectedVaccine]) ||
                   (selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached) ||
                   (selectedVaccine && vaccineStockInfo[selectedVaccine]?.expired) ||
                   (selectedVaccine && vaccineStockInfo[selectedVaccine]?.stock <= 0)
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
               >
-                <PlusIcon className="h-5 w-5" /> 
+                <PlusIcon className="h-5 w-5" />
                 {selectedVaccine && vaccineStockInfo[selectedVaccine]?.expired
                   ? "Vaccin périmé"
                   : selectedVaccine && vaccineStockInfo[selectedVaccine]?.stock <= 0
                     ? "Stock épuisé"
-                    : selectedVaccine && fullyAdministeredVaccines[selectedVaccine] 
-                      ? "Toutes les doses administrées" 
+                    : selectedVaccine && fullyAdministeredVaccines[selectedVaccine]
+                      ? "Toutes les doses administrées"
                       : selectedVaccine && maxRappelsInfo[selectedVaccine]?.maxReached
-                        ? `Maximum atteint (${maxRappelsInfo[selectedVaccine]?.currentCount}/${maxRappelsInfo[selectedVaccine]?.maxAllowed})` 
+                        ? `Maximum atteint (${maxRappelsInfo[selectedVaccine]?.currentCount}/${maxRappelsInfo[selectedVaccine]?.maxAllowed})`
                         : "Confirmer l'ajout"}
               </button>
               <button

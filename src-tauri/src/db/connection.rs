@@ -23,7 +23,7 @@ pub fn initialize_db(app_dir: &Path) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-pub fn get_connection() -> Result<std::sync::MutexGuard<Option<Connection>>, anyhow::Error> {
+pub fn get_connection() -> Result<std::sync::MutexGuard<'static, Option<Connection>>, anyhow::Error> {
     let conn = DB_CONNECTION.lock()
         .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
     

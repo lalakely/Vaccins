@@ -59,7 +59,7 @@ pub struct Vaccin {
     pub stock: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Enfant {
     pub id: Option<i64>,
     pub nom: String,

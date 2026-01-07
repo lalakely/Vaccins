@@ -20,7 +20,6 @@ import {
 function VaccinationRatio() {
   const [chartData, setChartData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [hasVaccinations, setHasVaccinations] = React.useState(true);
 
   // Configuration des couleurs et labels pour le graphique
   const chartConfig = {
@@ -63,7 +62,6 @@ function VaccinationRatio() {
 
         // Vérifier si des vaccinations existent
         if (vaccinations.length === 0 || data.every((item) => item.vaccines === 0)) {
-          setHasVaccinations(false);
           setChartData([
             {
               fokotany: "Aucune donnée",
@@ -72,14 +70,12 @@ function VaccinationRatio() {
             },
           ]);
         } else {
-          setHasVaccinations(true);
           setChartData(data);
         }
 
         setLoading(false);
       } catch (error) {
         console.error("Erreur lors du chargement des données :", error);
-        setHasVaccinations(false);
         setChartData([
           {
             fokotany: "Erreur",

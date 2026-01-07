@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: ${DB_HOST}
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./bdd/csb_full_dump_20260103_121355.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - csb-network
+
+  backend:
+    build: ./backend
+    container_name: vaccins-backend
+    restart: always
+
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=*
+    depends_on:
+      - db
+    networks:
+      - csb-network
+
+  frontend:
+    build: ./frontend
+    container_name: vaccins-frontend
+    restart: always
+
+    depends_on:
+      - backend
+    environment:
+      - PROD=${PROD}
+      
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  csb-network:
+    driver: bridge

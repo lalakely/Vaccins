@@ -12,4 +12,22 @@ const pool = mysql.createPool({
     queueLimit: 0,
 });
 
+// Gérer les erreurs de connexion au pool
+pool.on('connection', (connection) => {
+    console.log('Nouvelle connexion à la base de données établie.');
+});
+
+pool.on('error', (err) => {
+    console.error('Erreur SQL imprévue sur le pool:', err);
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.error('La connexion à la base de données a été fermée.');
+    }
+    if (err.code === 'ER_CON_COUNT_ERROR') {
+        console.error('La base de données a trop de connexions.');
+    }
+    if (err.code === 'ECONNREFUSED') {
+        console.error('La connexion à la base de données a été refusée.');
+    }
+});
+
 module.exports = pool;

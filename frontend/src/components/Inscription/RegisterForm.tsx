@@ -12,15 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
+    Alert,
+    AlertDescription,
+    AlertTitle,
 } from "@/components/ui/alert";
 
 function RegisterForm() {
@@ -83,7 +83,7 @@ function RegisterForm() {
                 accountType: formData.accountType,
                 password: '***' // Masqué pour la sécurité
             });
-            
+
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -94,19 +94,24 @@ function RegisterForm() {
                     password: formData.password
                 })
             });
-            
+
             console.log('Statut de la réponse:', response.status);
             console.log('Headers de la réponse:', Object.fromEntries(response.headers.entries()));
-            
+
             let data;
+            const responseText = await response.text();
+
             try {
-                data = await response.json();
-                console.log('Données de la réponse:', data);
-            } catch (jsonError) {
-                console.error('Erreur lors du parsing JSON:', jsonError);
-                const textResponse = await response.text();
-                console.log('Réponse texte brute:', textResponse);
-                throw new Error(`Erreur de parsing JSON: ${jsonError.message}. Réponse brute: ${textResponse}`);
+                data = JSON.parse(responseText);
+                console.log('Données de la réponse (JSON):', data);
+            } catch (jsonError: any) {
+                console.warn('La réponse n\'est pas au format JSON:', responseText.substring(0, 100) + '...');
+                data = { message: `Erreur serveur (${response.status})` };
+
+                if (!response.ok) {
+                    console.error('Réponse d\'erreur brute du serveur:', responseText);
+                    throw new Error(`Erreur serveur (${response.status}): ${responseText.substring(0, 500)}`);
+                }
             }
 
             if (response.ok) {
@@ -295,8 +300,8 @@ function RegisterForm() {
                     </CardContent>
 
                     <CardFooter className="flex flex-col space-y-4 p-6 rounded-b-xl">
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             className="w-full h-12 bg-gray-700 text-white hover:bg-gray-800 transition-colors rounded-full flex items-center justify-center gap-2"
                             disabled={loading}
                         >

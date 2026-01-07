@@ -182,13 +182,14 @@ pub fn get_notifications_for_user(
         }
     };
     
-    let mut stmt = match user_id {
-        Some(id) => conn.prepare(query)?.query(params![id, limit, offset])?,
-        None => conn.prepare(query)?.query(params![limit, offset])?,
+    let mut stmt = conn.prepare(query)?;
+    let mut rows = match user_id {
+        Some(id) => stmt.query(params![id, limit, offset])?,
+        None => stmt.query(params![limit, offset])?,
     };
     
     let mut notifications = Vec::new();
-    while let Some(row) = stmt.next()? {
+    while let Some(row) = rows.next()? {
         notifications.push(Notification {
             id: Some(row.get(0)?),
             user_id: row.get(1)?,

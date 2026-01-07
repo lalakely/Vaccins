@@ -61,7 +61,11 @@ exports.loginUser = async (req, res) => {
         });
     } catch (error) {
         console.error("Erreur lors de la connexion :", error);
-        return res.status(500).json({ message: "Erreur interne du serveur." });
+        return res.status(500).json({
+            message: "Erreur interne du serveur.",
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 

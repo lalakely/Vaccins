@@ -44,11 +44,17 @@ pub fn get_vaccin_by_id(vaccin_id: i64) -> Result<Vaccin, anyhow::Error> {
     
     let vaccin = stmt.query_row(params![vaccin_id], |row| {
         // Parse dates if they exist
-        let date_arrivee: Option<String> = row.get(3)?;
-        let date_arrivee = date_arrivee.and_then(|d| NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok());
+        let date_arrivee: Option<String> = row.get::<usize, Option<String>>(3)?;
+        let date_arrivee = match date_arrivee {
+            Some(d) => NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok(),
+            None => None,
+        };
         
-        let date_peremption: Option<String> = row.get(4)?;
-        let date_peremption = date_peremption.and_then(|d| NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok());
+        let date_peremption: Option<String> = row.get::<usize, Option<String>>(4)?;
+        let date_peremption = match date_peremption {
+            Some(d) => NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok(),
+            None => None,
+        };
         
         Ok(Vaccin {
             id: Some(row.get(0)?),
@@ -133,11 +139,17 @@ pub fn get_all_vaccins() -> Result<Vec<Vaccin>, anyhow::Error> {
     
     let vaccin_iter = stmt.query_map([], |row| {
         // Parse dates if they exist
-        let date_arrivee: Option<String> = row.get(3)?;
-        let date_arrivee = date_arrivee.and_then(|d| NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok());
+        let date_arrivee: Option<String> = row.get::<usize, Option<String>>(3)?;
+        let date_arrivee = match date_arrivee {
+            Some(d) => NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok(),
+            None => None,
+        };
         
-        let date_peremption: Option<String> = row.get(4)?;
-        let date_peremption = date_peremption.and_then(|d| NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok());
+        let date_peremption: Option<String> = row.get::<usize, Option<String>>(4)?;
+        let date_peremption = match date_peremption {
+            Some(d) => NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok(),
+            None => None,
+        };
         
         Ok(Vaccin {
             id: Some(row.get(0)?),
