@@ -8,8 +8,6 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./bdd/csb_full_dump_20260103_121355.sql:/docker-entrypoint-initdb.d/init.sql
@@ -20,7 +18,6 @@ services:
     build: ./backend
     container_name: vaccins-backend
     restart: always
-
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
@@ -33,17 +30,46 @@ services:
       - db
     networks:
       - csb-network
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS (sécurisé)
+      - "traefik.http.routers.csb-api-secure.rule=Host(`api.csb.madahoff.com`)"
+      - "traefik.http.routers.csb-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.csb-api-secure.tls=true"
+      - "traefik.http.routers.csb-api-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.csb-api-secure.service=csb-api-service"
+      # Router HTTP (redirection vers HTTPS)
+      - "traefik.http.routers.csb-api.rule=Host(`api.csb.madahoff.com`)"
+      - "traefik.http.routers.csb-api.entrypoints=web"
+      - "traefik.http.routers.csb-api.middlewares=redirect-to-https"
+      # Service (port interne du container)
+      - "traefik.http.services.csb-api-service.loadbalancer.server.port=3000"
 
   frontend:
     build: ./frontend
     container_name: vaccins-frontend
     restart: always
-
     depends_on:
       - backend
     environment:
       - PROD=${PROD}
-      
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS (sécurisé)
+      - "traefik.http.routers.csb-web-secure.rule=Host(`csb.madahoff.com`)"
+      - "traefik.http.routers.csb-web-secure.entrypoints=websecure"
+      - "traefik.http.routers.csb-web-secure.tls=true"
+      - "traefik.http.routers.csb-web-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.csb-web-secure.service=csb-web-service"
+      # Router HTTP (redirection vers HTTPS)
+      - "traefik.http.routers.csb-web.rule=Host(`csb.madahoff.com`)"
+      - "traefik.http.routers.csb-web.entrypoints=web"
+      - "traefik.http.routers.csb-web.middlewares=redirect-to-https"
+      # Service (port interne du container)
+      - "traefik.http.services.csb-web-service.loadbalancer.server.port=80"
 
 volumes:
   mysql_data:
@@ -52,3 +78,5 @@ volumes:
 networks:
   csb-network:
     driver: bridge
+  dokploy-network:
+    external: true
