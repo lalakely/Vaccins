@@ -83,6 +83,15 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const [vaccineAdministeredRappelsCount, setVaccineAdministeredRappelsCount] = useState<{ [key: string]: number }>({});
   // État pour suivre les vaccins dont tous les rappels ont été administrés
   const [fullyAdministeredVaccines, setFullyAdministeredVaccines] = useState<Record<string, boolean>>({});
+  // État pour stocker la date de vaccination sélectionnée par l'utilisateur
+  const [vaccinationDate, setVaccinationDate] = useState<string>("");
+  // État pour le dialogue d'administration de rappel
+  const [rappelAdminDialog, setRappelAdminDialog] = useState<{
+    isOpen: boolean;
+    parentVaccineId: string;
+    rappelVaccinId: string;
+    date: string;
+  }>({ isOpen: false, parentVaccineId: "", rappelVaccinId: "", date: "" });
 
   // Fonction pour regrouper les vaccins par leur vaccin_id
   const groupVaccinesByType = (vaccines: Vaccine[]) => {
@@ -526,7 +535,15 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   };
 
   // Fonction pour administrer directement un rappel depuis la liste des vaccins administrés
-  const handleAdministerRappel = async (parentVaccineId: string, rappelVaccinId: string) => {
+  const handleAdministerRappel = async (parentVaccineId: string, rappelVaccinId: string, dateStr?: string) => {
+    // Vérifier si une date a été fournie
+    const administrationDate = dateStr || vaccinationDate;
+    if (!administrationDate) {
+      setError("Veuillez sélectionner une date de vaccination");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
     try {
       // Afficher un indicateur de chargement
       setIsLoading(true);
@@ -553,7 +570,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
           enfant_id: enfantId,
           parent_vaccin_id: parentVaccineId,
           rappel_vaccin_id: rappelVaccinId,
-          date_administration: new Date().toISOString().split("T")[0],
+          date_administration: administrationDate,
         }),
       });
 
@@ -783,6 +800,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
 
       // Réinitialiser l'interface utilisateur
       setSelectedVaccine("");
+      setVaccinationDate("");
       setShowCombobox(false);
 
       // Ajouter un petit délai pour s'assurer que les données sont bien mises à jour
@@ -801,6 +819,13 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
   const handleAddVaccine = async () => {
     if (!selectedVaccine || !enfantId) {
       console.error("Vaccine or enfantId missing");
+      return;
+    }
+
+    // Vérifier si une date a été sélectionnée
+    if (!vaccinationDate) {
+      setError("Veuillez sélectionner une date de vaccination");
+      setTimeout(() => setError(null), 5000);
       return;
     }
 
@@ -840,7 +865,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             enfant_id: enfantId,
             parent_vaccin_id: rappelCheck.parentVaccineId,
             rappel_vaccin_id: selectedVaccine,
-            date_administration: new Date().toISOString().split("T")[0],
+            date_administration: vaccinationDate,
           });
 
           // Récupérer d'abord les informations du vaccin de rappel pour vérifier le stock
@@ -864,7 +889,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               enfant_id: enfantId,
               parent_vaccin_id: rappelCheck.parentVaccineId,
               rappel_vaccin_id: selectedVaccine,
-              date_administration: new Date().toISOString().split("T")[0],
+              date_administration: vaccinationDate,
             }),
           });
 
@@ -958,7 +983,7 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             body: JSON.stringify({
               enfant_id: enfantId,
               vaccin_id: selectedVaccine,
-              date_vaccination: new Date().toISOString().split("T")[0],
+              date_vaccination: vaccinationDate,
             }),
           });
 
@@ -1230,7 +1255,12 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
                                   {/* Bouton pour administrer le rappel directement s'il n'est pas encore administré */}
                                   {!isRappelAdministered && rappel.vaccin_id && (
                                     <button
-                                      onClick={() => handleAdministerRappel(groupedVaccine.vaccine.id, String(rappel.vaccin_id))}
+                                      onClick={() => setRappelAdminDialog({
+                                        isOpen: true,
+                                        parentVaccineId: groupedVaccine.vaccine.id,
+                                        rappelVaccinId: String(rappel.vaccin_id),
+                                        date: ""
+                                      })}
                                       className="ml-auto bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded-full transition-colors"
                                       title="Administrer ce rappel"
                                     >
@@ -1479,6 +1509,21 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
             </select>
           </div>
 
+          {/* Champ de date de vaccination */}
+          <div className="mt-4">
+            <label htmlFor="vaccinationDate" className="block text-sm font-medium text-gray-700 mb-1">
+              Date de vaccination
+            </label>
+            <input
+              type="date"
+              id="vaccinationDate"
+              value={vaccinationDate}
+              onChange={(e) => setVaccinationDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-gray-400 focus:border-gray-600 bg-white text-gray-900"
+              required
+            />
+          </div>
+
           {/* Affichage des avertissements de stock épuisé ou péremption */}
           {selectedVaccine && vaccineStockInfo[selectedVaccine] && (
             <>
@@ -1563,6 +1608,60 @@ function ChildVaccinations({ enfantId }: { enfantId: string }) {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Dialogue pour sélectionner la date d'administration du rappel */}
+      {rappelAdminDialog.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Date d'administration du rappel
+            </h3>
+            <div className="mb-4">
+              <label htmlFor="rappelDate" className="block text-sm font-medium text-gray-700 mb-1">
+                Sélectionnez la date de vaccination
+              </label>
+              <input
+                type="date"
+                id="rappelDate"
+                value={rappelAdminDialog.date}
+                onChange={(e) => setRappelAdminDialog(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-600 bg-white text-gray-900"
+                required
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setRappelAdminDialog({ isOpen: false, parentVaccineId: "", rappelVaccinId: "", date: "" })}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  if (!rappelAdminDialog.date) {
+                    setError("Veuillez sélectionner une date de vaccination");
+                    setTimeout(() => setError(null), 3000);
+                    return;
+                  }
+                  await handleAdministerRappel(
+                    rappelAdminDialog.parentVaccineId,
+                    rappelAdminDialog.rappelVaccinId,
+                    rappelAdminDialog.date
+                  );
+                  setRappelAdminDialog({ isOpen: false, parentVaccineId: "", rappelVaccinId: "", date: "" });
+                }}
+                disabled={!rappelAdminDialog.date}
+                className={`px-4 py-2 rounded-lg transition-colors ${rappelAdminDialog.date
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
